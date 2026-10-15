@@ -5,6 +5,7 @@ import { LEVEL_LABEL, SLOT_LABEL } from "../../shared/types";
 import { api, auth } from "../api";
 import { DAY_SHORT, ErrorBox, useLoad, useMe } from "../ui";
 import { ConstraintEditor } from "./ConstraintEditor";
+import { TastePicker } from "../TastePicker";
 
 const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0];
 
@@ -64,6 +65,8 @@ export function Profile() {
 
       <Learned />
 
+      <Tastes />
+
       <RecurringAbsences breakfast={me.user.breakfast} />
 
       <section className="section stack">
@@ -80,6 +83,47 @@ export function Profile() {
         </button>
       </section>
     </>
+  );
+}
+
+function Tastes() {
+  const { me, setMe } = useMe();
+  const [selected, setSelected] = useState(me.user.taste_dishes);
+  const [editing, setEditing] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function save() {
+    setBusy(true);
+    setError(null);
+    try {
+      setMe(await api<MeResponse>("PATCH", "/api/me", { taste_dishes: selected }));
+      setEditing(false);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="section">
+      <h2>I miei gusti</h2>
+      <div className="card stack">
+        {editing ? <>
+          <TastePicker selected={selected} onChange={setSelected} disabled={busy} />
+          <ErrorBox error={error} />
+          <div className="row between">
+            <button className="btn-ghost" disabled={busy} onClick={() => setEditing(false)}>Annulla</button>
+            <button className="btn-primary" disabled={busy} onClick={() => void save()}>{busy ? "Salvataggio…" : "Salva gusti"}</button>
+          </div>
+        </> : <>
+          <p className="muted">{me.user.taste_dishes.length ? `${me.user.taste_dishes.length} piatti per conoscere i tuoi gusti. Puoi rivederli quando vuoi.` : "Raccontaci cosa ti piace: scegli tra le foto dei piatti per rendere il menù più tuo."}</p>
+          <p className="muted">Le modifiche orientano i prossimi suggerimenti del menù.</p>
+          <button onClick={() => { setSelected(me.user.taste_dishes); setError(null); setEditing(true); }}>Scegli i piatti che ti piacciono</button>
+        </>}
+      </div>
+    </section>
   );
 }
 

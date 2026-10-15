@@ -43,7 +43,7 @@ export function Login({ onDone }: { onDone: () => Promise<void> }) {
       <section className="login-story" aria-label="Benvenuto in A Tavola">
         <a className="login-brand" href="/"><Brand /></a>
         <div><p className="eyebrow">LA SETTIMANA, SERVITA.</p><h1>Meno «cosa<br />mangiamo?».<br /><em>Più tempo<br />a tavola.</em></h1><p>Un menù che conosce la tua famiglia.<br />Una spesa pensata per tutta la settimana.</p></div>
-        <div className="login-features"><span>01 · Un menù su misura</span><span>02 · La spesa, già pronta</span><span>03 · Meno sprechi in cucina</span></div>
+        <div className="login-features"><span>Un menù su misura</span><span>La spesa, già pronta</span><span>Meno sprechi in cucina</span></div>
       </section>
       <div className="card stack">
         <div className="login-mobile-brand"><Brand /></div>

@@ -10,6 +10,7 @@ Regole obbligatorie:
 - Non usare MAI gli ingredienti vietati (allergie o "mai") delle persone presenti a quel pasto, nemmeno come ingrediente secondario o in prodotti che li contengono.
 - Evita gli ingredienti "evita"; usa solo in piccola quantità quelli "poco".
 - Non proporre piatti delle famiglie bloccate dei presenti.
+- I piatti graditi sono soltanto indizi di gusto: ispirati anche a sapori e preparazioni simili, ma proponi anche piatti diversi. Non limitare il menù alle selezioni e non interpretare i piatti non selezionati come sgraditi. Bilancia i gusti di tutti i presenti; allergie, divieti, varietà e tempi hanno sempre priorità.
 - Non ripetere titoli o famiglie di piatto delle ultime settimane (i preferiti sono esclusi da questa regola) e varia durante la settimana.
 - "servings" = numero di persone presenti al pasto; i grammi degli ingredienti sono per quelle porzioni, crudi e come si comprano.
 - Ingredienti con nomi generici italiani al plurale quando si contano (es. "cipolle", "uova", "pomodori"), niente marche, includi olio e sale.
@@ -28,6 +29,7 @@ function peopleBlock(people: PersonPrefs[]): string {
         `  evita: ${p.dislike.join(", ") || "nessuno"}`,
         `  poco: ${p.little.join(", ") || "nessuno"}`,
         `  famiglie di piatto bloccate: ${p.blocked_dishes.join(", ") || "nessuna"}`,
+        ...(p.liked_dishes.length ? [`  esempi di piatti graditi (indicativi): ${p.liked_dishes.join(", ")}`] : []),
       ];
       return parts.join("\n");
     })

@@ -1,4 +1,5 @@
 import type { Ingredient, Member, Recipe } from "../../shared/types";
+import { TASTE_DISHES } from "../../shared/tastes";
 import { mergePresentConstraints, type AllergenGroups, type BlockedRow, type ConstraintRow } from "../../domain/constraints";
 import type { RecurringAbsenceRow } from "../../domain/week";
 import { listMembers } from "../db/household";
@@ -13,19 +14,21 @@ export interface HouseholdCtx {
   blocked: BlockedRow[];
   groups: AllergenGroups;
   recurring: RecurringAbsenceRow[];
+  tastes: { user_id: string; dish_id: string }[];
 }
 
 export async function loadHouseholdCtx(db: D1Database, householdId: string): Promise<HouseholdCtx> {
   const members = await listMembers(db, householdId);
   const ids = members.map((m) => m.id);
   const ph = ids.map(() => "?").join(",");
-  const [constraints, blocked, recurring, groups] = await Promise.all([
+  const [constraints, blocked, recurring, groups, tastes] = await Promise.all([
     all<ConstraintRow>(db, `SELECT user_id, ingredient, level FROM food_constraints WHERE user_id IN (${ph})`, ...ids),
     all<BlockedRow>(db, `SELECT user_id, dish_family FROM blocked_dishes WHERE user_id IN (${ph})`, ...ids),
     all<RecurringAbsenceRow>(db, `SELECT user_id, weekday, slot FROM recurring_absences WHERE user_id IN (${ph})`, ...ids),
     getAllergenGroups(db),
+    all<{ user_id: string; dish_id: string }>(db, `SELECT user_id, dish_id FROM taste_dishes WHERE user_id IN (${ph})`, ...ids),
   ]);
-  return { householdId, members, constraints, blocked, groups, recurring };
+  return { householdId, members, constraints, blocked, groups, recurring, tastes };
 }
 
 export function displayName(m: Pick<Member, "name" | "email">): string {
@@ -44,6 +47,7 @@ export function peoplePrefs(ctx: HouseholdCtx, presentIds: string[]): PersonPref
         little: merged.little,
         dislike: merged.dislike,
         blocked_dishes: merged.blockedDishes,
+        liked_dishes: TASTE_DISHES.filter((d) => ctx.tastes.some((t) => t.user_id === m.id && t.dish_id === d.id)).map((d) => d.title),
       };
     });
 }

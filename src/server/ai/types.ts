@@ -10,6 +10,8 @@ export interface PersonPrefs {
   little: string[];
   dislike: string[];
   blocked_dishes: string[];
+  /** Esempi di gusto, senza obbligo di riproporli o escludere gli altri piatti. */
+  liked_dishes: string[];
 }
 
 export interface MealSlotRequest {

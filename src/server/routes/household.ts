@@ -1,6 +1,7 @@
 import { Hono, type Context } from "hono";
 import { z } from "zod";
 import type { MeResponse } from "../../shared/types";
+import { TASTE_DISHES } from "../../shared/tastes";
 import type { AppEnv } from "../env";
 import { body, fail } from "../http";
 import {
@@ -11,21 +12,22 @@ import {
   leaveHousehold,
   listMembers,
 } from "../db/household";
-import { first, run } from "../db/sql";
+import { all, first, run, stmt } from "../db/sql";
 
 export const householdRoutes = new Hono<AppEnv>();
 
 async function me(c: Context<AppEnv>): Promise<MeResponse> {
   const user = c.get("user");
   const hid = c.get("householdId");
-  const [hh, members, u] = await Promise.all([
+  const [hh, members, u, tastes] = await Promise.all([
     getHousehold(c.env.DB, hid),
     listMembers(c.env.DB, hid),
     first<{ name: string; breakfast: number }>(c.env.DB, `SELECT name, breakfast FROM "user" WHERE id = ?`, user.id),
+    all<{ dish_id: string }>(c.env.DB, "SELECT dish_id FROM taste_dishes WHERE user_id = ? ORDER BY dish_id", user.id),
   ]);
   const admin = (c.env.ADMIN_EMAIL || "").toLowerCase().split(",").map((s) => s.trim()).filter(Boolean);
   return {
-    user: { id: user.id, email: user.email, name: u?.name ?? "", breakfast: !!u?.breakfast },
+    user: { id: user.id, email: user.email, name: u?.name ?? "", breakfast: !!u?.breakfast, taste_dishes: tastes.map((t) => t.dish_id) },
     household: { id: hid, name: hh?.name ?? "", role: c.get("role"), provider: hh?.provider ?? null },
     members,
     isAdmin: admin.includes(user.email.toLowerCase()),
@@ -38,11 +40,23 @@ householdRoutes.get("/me", async (c) => c.json(await me(c)));
 householdRoutes.patch("/me", async (c) => {
   const data = await body(
     c,
-    z.object({ name: z.string().trim().min(1).max(60).optional(), breakfast: z.boolean().optional() }),
+    z.object({
+      name: z.string().trim().min(1).max(60).optional(),
+      breakfast: z.boolean().optional(),
+      taste_dishes: z.array(z.enum(TASTE_DISHES.map((d) => d.id))).max(TASTE_DISHES.length).optional(),
+    }),
   );
   const user = c.get("user");
-  if (data.name !== undefined) await run(c.env.DB, `UPDATE "user" SET name = ?, "updatedAt" = ? WHERE id = ?`, data.name, new Date().toISOString(), user.id);
-  if (data.breakfast !== undefined) await run(c.env.DB, `UPDATE "user" SET breakfast = ? WHERE id = ?`, data.breakfast, user.id);
+  const updates: D1PreparedStatement[] = [];
+  if (data.name !== undefined) updates.push(stmt(c.env.DB, `UPDATE "user" SET name = ?, "updatedAt" = ? WHERE id = ?`, data.name, new Date().toISOString(), user.id));
+  if (data.breakfast !== undefined) updates.push(stmt(c.env.DB, `UPDATE "user" SET breakfast = ? WHERE id = ?`, data.breakfast, user.id));
+  if (data.taste_dishes !== undefined) {
+    updates.push(stmt(c.env.DB, "DELETE FROM taste_dishes WHERE user_id = ?", user.id));
+    for (const id of new Set(data.taste_dishes)) {
+      updates.push(stmt(c.env.DB, "INSERT INTO taste_dishes (user_id, dish_id) VALUES (?, ?)", user.id, id));
+    }
+  }
+  if (updates.length) await c.env.DB.batch(updates);
   return c.json(await me(c));
 });
 

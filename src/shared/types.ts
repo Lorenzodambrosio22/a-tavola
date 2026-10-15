@@ -30,7 +30,7 @@ export interface Member {
 }
 
 export interface MeResponse {
-  user: { id: string; name: string; email: string; breakfast: boolean };
+  user: { id: string; name: string; email: string; breakfast: boolean; taste_dishes: string[] };
   household: { id: string; name: string; role: "owner" | "member"; provider: ProviderName | null };
   members: Member[];
   isAdmin: boolean;

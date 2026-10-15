@@ -96,6 +96,7 @@ npm run build
 ## Funzioni implementate
 
 - Login email con OTP salvato come hash, onboarding, nucleo personale, inviti monouso, profilo e assenze ricorrenti.
+- Scelta facoltativa di 24 piatti con foto al primo accesso e nel profilo: orienta i suggerimenti senza chiamate AI aggiuntive. [Flusso, immagini e migrazione](docs/taste-onboarding.md).
 - Menù settimanale con Claude / Workers AI, fallback, controllo allergie nel codice (anche sui pasti fissati), porzioni, preferiti, ricette proprie e link da risultati di ricerca.
 - Foto ricette recuperate dai metadati della pagina originale, senza generazione immagini, chiavi fotografiche o chiamate AI aggiuntive. [Flusso e limiti](docs/recipe-images.md).
 - Rifiuti e apprendimento per persona, con sostituzione del pasto.

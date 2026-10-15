@@ -235,7 +235,22 @@ body { background: radial-gradient(ellipse at 12% 0%, #f0f6e9 0, transparent 45%
 .login .card { border-radius: 26px; border-color: var(--line); box-shadow: 0 18px 60px #1e4b3210; }
 .login-story h1 em { color: var(--accent); }
 .error { background: #fff0ec; }
+.taste-count { color: var(--accent); font-size: .85rem; }
+.taste-category { margin-top: 26px; }
+.taste-category h3 { margin-bottom: 12px; }
+.taste-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px; }
+.taste-card { min-width: 0; }
+.taste-choice { position: relative; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 0; padding: 0; border-radius: 16px; width: 100%; height: calc(100% - 26px); overflow: hidden; text-align: left; border: 2px solid var(--line); }
+.taste-choice.selected { border-color: var(--accent); background: var(--accent-soft); }
+.taste-choice img, .taste-photo-fallback { width: 100%; height: auto; aspect-ratio: 3/2; object-fit: cover; display: block; }
+.taste-photo-fallback { display: grid; place-items: center; background: var(--surface-2); font-size: .7rem; color: var(--ink-2); }
+.taste-check { position: absolute; top: 8px; right: 8px; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; color: var(--accent); background: white; box-shadow: 0 1px 5px #213e3026; }
+.taste-choice.selected .taste-check { background: var(--accent); color: white; }
+.taste-title { padding: 11px 12px; font-size: .86rem; line-height: 1.35; }
+.taste-credit { display: inline-block; color: var(--ink-2); font-size: .61rem; margin: 6px 2px 0; }
+.taste-actions { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line); }
 @media (min-width: 720px) {
+  .taste-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
   .app { padding-inline: 32px; }
   .app-brand { margin-bottom: 44px; }
   .login-mobile-brand { display: none; }
