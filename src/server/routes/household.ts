@@ -1,0 +1,110 @@
+import { Hono, type Context } from "hono";
+import { z } from "zod";
+import type { MeResponse } from "../../shared/types";
+import type { AppEnv } from "../env";
+import { body, fail } from "../http";
+import {
+  acceptInvite,
+  createInvite,
+  getHousehold,
+  HouseholdError,
+  leaveHousehold,
+  listMembers,
+} from "../db/household";
+import { first, run } from "../db/sql";
+
+export const householdRoutes = new Hono<AppEnv>();
+
+async function me(c: Context<AppEnv>): Promise<MeResponse> {
+  const user = c.get("user");
+  const hid = c.get("householdId");
+  const [hh, members, u] = await Promise.all([
+    getHousehold(c.env.DB, hid),
+    listMembers(c.env.DB, hid),
+    first<{ name: string; breakfast: number }>(c.env.DB, `SELECT name, breakfast FROM "user" WHERE id = ?`, user.id),
+  ]);
+  const admin = (c.env.ADMIN_EMAIL || "").toLowerCase().split(",").map((s) => s.trim()).filter(Boolean);
+  return {
+    user: { id: user.id, email: user.email, name: u?.name ?? "", breakfast: !!u?.breakfast },
+    household: { id: hid, name: hh?.name ?? "", role: c.get("role"), provider: hh?.provider ?? null },
+    members,
+    isAdmin: admin.includes(user.email.toLowerCase()),
+    onboarded: !!u?.name?.trim(),
+  };
+}
+
+householdRoutes.get("/me", async (c) => c.json(await me(c)));
+
+householdRoutes.patch("/me", async (c) => {
+  const data = await body(
+    c,
+    z.object({ name: z.string().trim().min(1).max(60).optional(), breakfast: z.boolean().optional() }),
+  );
+  const user = c.get("user");
+  if (data.name !== undefined) await run(c.env.DB, `UPDATE "user" SET name = ?, "updatedAt" = ? WHERE id = ?`, data.name, new Date().toISOString(), user.id);
+  if (data.breakfast !== undefined) await run(c.env.DB, `UPDATE "user" SET breakfast = ? WHERE id = ?`, data.breakfast, user.id);
+  return c.json(await me(c));
+});
+
+householdRoutes.patch("/household", async (c) => {
+  const data = await body(
+    c,
+    z.object({
+      name: z.string().trim().min(1).max(60).optional(),
+      provider: z.enum(["claude", "workersAi"]).nullable().optional(),
+    }),
+  );
+  if (c.get("role") !== "owner") fail(403, "Solo il proprietario può modificare il nucleo");
+  const hid = c.get("householdId");
+  if (data.name !== undefined) await run(c.env.DB, "UPDATE households SET name = ? WHERE id = ?", data.name, hid);
+  if (data.provider !== undefined) await run(c.env.DB, "UPDATE households SET provider = ? WHERE id = ?", data.provider, hid);
+  return c.json(await me(c));
+});
+
+householdRoutes.post("/household/invites", async (c) => {
+  if (c.get("role") !== "owner") fail(403, "Solo il proprietario può invitare");
+  const inv = await createInvite(c.env.DB, c.get("householdId"), c.get("user").id);
+  const origin = new URL(c.req.url).origin;
+  return c.json({ ...inv, url: `${origin}/invito/${inv.token}` });
+});
+
+householdRoutes.get("/household/invites/:token", async (c) => {
+  const row = await first<{ name: string; expires_at: string; used_at: string | null }>(
+    c.env.DB,
+    `SELECT h.name, i.expires_at, i.used_at FROM household_invites i JOIN households h ON h.id = i.household_id WHERE i.token = ?`,
+    c.req.param("token"),
+  );
+  if (!row) fail(404, "Invito non trovato");
+  const valid = !row.used_at && row.expires_at > new Date().toISOString();
+  return c.json({ household_name: row.name, valid });
+});
+
+householdRoutes.post("/household/join", async (c) => {
+  const { token } = await body(c, z.object({ token: z.string().min(8) }));
+  try {
+    await acceptInvite(c.env.DB, token, c.get("user").id);
+  } catch (e) {
+    if (e instanceof HouseholdError) fail(e.status, e.message);
+    throw e;
+  }
+  const m = await first<{ household_id: string; role: "owner" | "member" }>(
+    c.env.DB,
+    "SELECT household_id, role FROM household_members WHERE user_id = ?",
+    c.get("user").id,
+  );
+  c.set("householdId", m!.household_id);
+  c.set("role", m!.role);
+  return c.json(await me(c));
+});
+
+householdRoutes.post("/household/leave", async (c) => {
+  try {
+    const m = await leaveHousehold(c.env.DB, c.get("user"));
+    c.set("householdId", m.household_id);
+    c.set("role", m.role);
+  } catch (e) {
+    if (e instanceof HouseholdError) fail(e.status, e.message);
+    throw e;
+  }
+  return c.json(await me(c));
+});

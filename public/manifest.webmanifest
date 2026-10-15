@@ -1,0 +1,14 @@
+{
+  "name": "App Cibo",
+  "short_name": "Cibo",
+  "description": "Menù settimanale, spesa e dispensa per la famiglia",
+  "lang": "it",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fbf7f0",
+  "theme_color": "#fbf7f0",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

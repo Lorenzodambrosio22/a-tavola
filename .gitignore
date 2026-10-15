@@ -4,3 +4,6 @@ dist/
 .dev.vars
 .env*
 .DS_Store
+.claude/
+coverage/
+!.dev.vars.example

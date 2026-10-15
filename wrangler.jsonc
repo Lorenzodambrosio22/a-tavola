@@ -1,0 +1,37 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "app-cibo",
+  "main": "src/server/index.ts",
+  "compatibility_date": "2026-08-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "app-cibo",
+      // Sostituisci con l'id restituito da `npx wrangler d1 create app-cibo`
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "ai": { "binding": "AI" },
+  "triggers": {
+    // Dopo la mezzanotte italiana (anche con ora legale), elabora il giorno precedente.
+    "crons": ["15 0 * * *"]
+  },
+  "vars": {
+    "APP_ENV": "production",
+    "AI_PROVIDER_DEFAULT": "claude",
+    "CLAUDE_MODEL_WEEK": "claude-sonnet-5-5",
+    "CLAUDE_MODEL_RECIPE": "claude-sonnet-5-5",
+    "CLAUDE_MODEL_FAST": "claude-haiku-5-5",
+    "WORKERS_AI_MODEL": "@cf/meta/llama-4-scout-17b-16e-instruct",
+    "EMAIL_FROM": "App Cibo <onboarding@resend.dev>"
+    // Secret (wrangler secret put ...): ANTHROPIC_API_KEY, RESEND_API_KEY, BETTER_AUTH_SECRET
+    // Opzionali: BETTER_AUTH_URL, ADMIN_EMAIL, BRAVE_SEARCH_API_KEY
+  },
+  "observability": { "enabled": true }
+}
