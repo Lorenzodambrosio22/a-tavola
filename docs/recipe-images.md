@@ -17,3 +17,12 @@ Migrazione richiesta: `0007_foto_ricette.sql`. Applicata al database locale dura
 Il nuovo nome visibile è **A Tavola**, con un tema chiaro anche sui dispositivi impostati in modalità scura. I nomi tecnici delle risorse Cloudflare restano quelli già configurati.
 
 Verifiche: 75 test superati, controllo TypeScript e build completati. Nel browser sono state recuperate e visualizzate le foto del [risotto alla zucca di GialloZafferano](https://ricette.giallozafferano.it/Risotto-alla-zucca.html) e delle [trofie al pesto di Cucchiaio d'Argento](https://www.cucchiaio.it/ricetta/ricetta-trofie-pesto/), quindi riutilizzate nel menù. Il collaudo locale usa un account dedicato e non richiede generazioni AI.
+
+## Ricerca diretta e procedimento dalla pagina (16 ottobre)
+
+Il link non viene più cercato con l'AI: il server usa la ricerca interna di GialloZafferano (`/ricerca-ricette/<parole>/`) e sceglie il risultato con più parole in comune con il titolo. Dalla stessa pagina legge foto e procedimento (`recipeInstructions` della Recipe JSON-LD), togliendo i rimandi numerici alle foto.
+
+- Dopo la generazione e a ogni apertura della settimana, i piatti generati vengono preparati in background (`waitUntil`), senza AI. Un tentativo senza risultati si ripete dopo un giorno. Il menù si aggiorna da solo due volte per mostrare le foto appena pronte.
+- All'apertura di un piatto si riprova la ricerca diretta; solo se GialloZafferano non ha quel piatto si torna all'AI (procedimento con `writeRecipe`, link con `findSourceUrl`).
+- Il procedimento è quello della ricetta originale: le quantità possono differire da quelle del menù, calcolate sulle persone a tavola. Il collegamento al sito resta visibile.
+- Cucchiaio d'Argento blocca la ricerca automatica (403), quindi non è usato per la ricerca. Se GialloZafferano cambia la pagina dei risultati, la ricerca restituisce null e resta il fallback.

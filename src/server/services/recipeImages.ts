@@ -45,21 +45,58 @@ function schemaImage(value: unknown, base: string): string | null {
   return null;
 }
 
-function recipeSchemaImage(value: unknown, base: string, depth = 0): string | null {
-  if (depth > 10 || !value || typeof value !== "object") return null;
-  if (Array.isArray(value)) return value.map((v) => recipeSchemaImage(v, base, depth + 1)).find(Boolean) ?? null;
-  const o = value as Record<string, unknown>;
-  const types = Array.isArray(o["@type"]) ? o["@type"] : [o["@type"]];
-  if (types.some((t) => typeof t === "string" && /(^|[\/#])Recipe$/.test(t))) {
-    const image = schemaImage(o.image, base);
-    if (image) return image;
+function instructionText(value: unknown, depth = 0): string[] {
+  if (depth > 5 || value == null) return [];
+  if (typeof value === "string") return value.split(/\n+/);
+  if (Array.isArray(value)) return value.flatMap((v) => instructionText(v, depth + 1));
+  if (typeof value === "object") {
+    const o = value as Record<string, unknown>;
+    if (o.itemListElement) return instructionText(o.itemListElement, depth + 1);
+    return instructionText(o.text ?? o.name, depth + 1);
   }
-  return recipeSchemaImage(o["@graph"], base, depth + 1) ?? recipeSchemaImage(o.mainEntity, base, depth + 1);
+  return [];
 }
 
-/** Preferisce la foto della Recipe JSON-LD, poi Open Graph e Twitter Card. */
-export async function extractRecipeImage(html: string, pageUrl: string): Promise<string | null> {
-  let recipe: string | null = null, og: string | null = null, twitter: string | null = null;
+const QUANTITY_AFTER = /^\s*(?:g|gr|kg|ml|cl|l|°|cm|minut|or[ae]\b|second|uov|cucchia|spicch|fett|pezz|volt|giorn|porzion)/i;
+
+/**
+ * Passi dalla Recipe JSON-LD. GialloZafferano inserisce i rimandi alle foto come numeri
+ * progressivi su tutto il procedimento ("la cottura 1 ; … salate 2 e"): si tolgono seguendo
+ * quel contatore, lasciando le quantità vere ("per 5 minuti").
+ */
+export function cleanSteps(value: unknown): string | null {
+  let next = 1;
+  const steps = instructionText(value)
+    .map((s) =>
+      s
+        .replace(/<[^>]*>/g, " ")
+        .replace(/\s(\d{1,2})(?=\s|[;.,:!?)]|$)/g, (match, n: string, offset: number, all: string) => {
+          if (Number(n) !== next || QUANTITY_AFTER.test(all.slice(offset + match.length))) return match;
+          next++;
+          return "";
+        })
+        .replace(/\s+([;.,:!?])/g, "$1")
+        .replace(/\s+/g, " ")
+        .trim(),
+    )
+    .filter((s) => s.length > 2);
+  return steps.length ? steps.map((s, i) => `${i + 1}. ${s}`).join("\n\n").slice(0, 12_000) : null;
+}
+
+function recipeSchema(value: unknown, depth = 0): Record<string, unknown> | null {
+  if (depth > 10 || !value || typeof value !== "object") return null;
+  if (Array.isArray(value)) return value.map((v) => recipeSchema(v, depth + 1)).find(Boolean) ?? null;
+  const o = value as Record<string, unknown>;
+  const types = Array.isArray(o["@type"]) ? o["@type"] : [o["@type"]];
+  if (types.some((t) => typeof t === "string" && /(^|[\/#])Recipe$/.test(t))) return o;
+  return recipeSchema(o["@graph"], depth + 1) ?? recipeSchema(o.mainEntity, depth + 1);
+}
+
+export interface RecipePage { image: string | null; steps: string | null }
+
+/** Foto (Recipe JSON-LD, poi Open Graph e Twitter Card) e procedimento dalla pagina originale. */
+export async function extractRecipePage(html: string, pageUrl: string): Promise<RecipePage> {
+  let recipeImage: string | null = null, steps: string | null = null, og: string | null = null, twitter: string | null = null;
   let json = "";
   const rewriter = new HTMLRewriter()
     .on("meta", { element(el) {
@@ -72,13 +109,23 @@ export async function extractRecipeImage(html: string, pageUrl: string): Promise
       element(el) {
         json = "";
         el.onEndTag(() => {
-          try { recipe ??= recipeSchemaImage(JSON.parse(json), pageUrl); } catch { /* Prova gli altri metadati. */ }
+          try {
+            const recipe = recipeSchema(JSON.parse(json));
+            if (recipe) {
+              recipeImage ??= schemaImage(recipe.image, pageUrl);
+              steps ??= cleanSteps(recipe.recipeInstructions);
+            }
+          } catch { /* Prova gli altri metadati. */ }
         });
       },
       text(chunk) { if (json.length < 256_000) json += chunk.text; },
     });
   await rewriter.transform(new Response(html, { headers: { "Content-Type": "text/html" } })).text();
-  return recipe ?? og ?? twitter;
+  return { image: recipeImage ?? og ?? twitter, steps };
+}
+
+export async function extractRecipeImage(html: string, pageUrl: string): Promise<string | null> {
+  return (await extractRecipePage(html, pageUrl)).image;
 }
 
 async function readHtml(response: Response): Promise<string | null> {
@@ -97,8 +144,9 @@ async function readHtml(response: Response): Promise<string | null> {
   } finally { reader.releaseLock(); }
 }
 
-export async function fetchRecipeImage(sourceUrl: string): Promise<string | null> {
-  let url = recipePageUrl(sourceUrl);
+/** Scarica una pagina dei siti supportati, seguendo solo redirect verso gli stessi siti. */
+export async function fetchRecipeHtml(pageUrl: string): Promise<{ html: string; url: string } | null> {
+  let url = recipePageUrl(pageUrl);
   if (!url) return null;
   const signal = AbortSignal.timeout(6000);
   try {
@@ -115,10 +163,19 @@ export async function fetchRecipeImage(sourceUrl: string): Promise<string | null
         await response.body?.cancel(); return null;
       }
       const html = await readHtml(response);
-      return html ? await extractRecipeImage(html, url.href) : null;
+      return html ? { html, url: url.href } : null;
     }
   } catch { /* Il sito non risponde o blocca l'anteprima: la ricetta rimane utilizzabile. */ }
   return null;
+}
+
+export async function fetchRecipePage(sourceUrl: string): Promise<RecipePage | null> {
+  const page = await fetchRecipeHtml(sourceUrl);
+  return page ? extractRecipePage(page.html, page.url) : null;
+}
+
+export async function fetchRecipeImage(sourceUrl: string): Promise<string | null> {
+  return (await fetchRecipePage(sourceUrl))?.image ?? null;
 }
 
 /** Riutilizza la foto per 7 giorni; attende 24 ore dopo un tentativo senza foto. Nessuna AI. */

@@ -1,6 +1,6 @@
 import { Hono, type Context } from "hono";
 import { z } from "zod";
-import type { Speed } from "../../shared/types";
+import type { Speed, WeekView } from "../../shared/types";
 import { addDays, isISODate, nextWeekday, todayIn } from "../../domain/dates";
 import { presence } from "../../domain/week";
 import type { AppEnv } from "../env";
@@ -11,6 +11,7 @@ import { getHousehold } from "../db/household";
 import { getRecipe, householdOwnRecipes, loadHouseholdCtx } from "../services/context";
 import { describeViolations, generateWeek, pantryForPrompt, recipeInsert, resolveMeal, violationsFor } from "../services/menu";
 import { buildMealViews, buildWeekView, getMealRow, mealAbsences, type MealRow } from "../services/weekView";
+import { prepareRecipes } from "../services/recipes";
 import { shoppingIngredientNames } from "../services/shopping";
 
 export const weekRoutes = new Hono<AppEnv>();
@@ -18,6 +19,17 @@ export const weekRoutes = new Hono<AppEnv>();
 export async function providerFor(c: Context<AppEnv>) {
   const hh = await getHousehold(c.env.DB, c.get("householdId"));
   return getProvider(c.env, hh?.provider);
+}
+
+/** Foto e procedimento dei piatti preparati dopo la risposta, senza AI e senza far attendere il menù. */
+function prepareInBackground(c: Context<AppEnv>, week: WeekView | null) {
+  const ids = week?.meals.flatMap((m) => (m.recipe ? [m.recipe.id] : [])) ?? [];
+  if (!ids.length) return;
+  try {
+    c.executionCtx.waitUntil(prepareRecipes(c.env.DB, ids));
+  } catch {
+    /* Nessun contesto di esecuzione: le ricette si preparano all'apertura. */
+  }
 }
 
 async function mealView(c: Context<AppEnv>, mealId: string) {
@@ -50,6 +62,7 @@ weekRoutes.get("/weeks/current", async (c) => {
   let suggested = nextWeekday(today, shoppingDay);
   if (last && last.start_date >= suggested) suggested = addDays(last.start_date, 7);
   const week = w ? await buildWeekView(db, hid, w.id, c.get("user").id) : null;
+  prepareInBackground(c, week);
   return c.json({ week, today, suggested_start: suggested, shopping_day: shoppingDay });
 });
 
@@ -65,6 +78,7 @@ weekRoutes.get("/weeks", async (c) => {
 weekRoutes.get("/weeks/:id", async (c) => {
   const v = await buildWeekView(c.env.DB, c.get("householdId"), c.req.param("id"), c.get("user").id);
   if (!v) fail(404, "Settimana non trovata");
+  prepareInBackground(c, v);
   return c.json({ week: v });
 });
 
@@ -89,6 +103,7 @@ weekRoutes.post("/weeks/generate", async (c) => {
     pinned: data.pinned,
   });
   const v = await buildWeekView(c.env.DB, c.get("householdId"), weekId, c.get("user").id);
+  prepareInBackground(c, v);
   return c.json({ week: v }, 201);
 });
 

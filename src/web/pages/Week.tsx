@@ -25,6 +25,18 @@ export function Week() {
   const { me } = useMe();
   const { data, setData, error, loading, reload } = useLoad<CurrentResp>("/api/weeks/current");
   const [settings, setSettings] = useState(false);
+  const [photoChecks, setPhotoChecks] = useState(0);
+
+  // Il server prepara le foto in background: due aggiornamenti silenziosi le mostrano senza ricaricare.
+  const missingPhotos = !!data?.week?.meals.some((m) => m.recipe && !m.recipe.source_url);
+  useEffect(() => {
+    if (!missingPhotos || photoChecks >= 2) return;
+    const t = setTimeout(() => {
+      setPhotoChecks((n) => n + 1);
+      void reload();
+    }, 8000);
+    return () => clearTimeout(t);
+  }, [missingPhotos, photoChecks, reload]);
 
   function replaceMeal(m: MealView) {
     if (!data?.week) return;
