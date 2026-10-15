@@ -1,4 +1,4 @@
-# App Cibo
+# A Tavola
 
 Webapp (PWA mobile-first, in italiano) per una persona o una famiglia: menù settimanale generato con l'AI nel rispetto di allergie e preferenze dei presenti, lista della spesa unica con "da comprare dopo", "non mi piace" che impara, ricette proprie, dispensa automatica.
 
@@ -33,7 +33,7 @@ npm run db:migrate:local               # crea il DB D1 locale e applica le migra
 npm run dev                            # http://localhost:5173
 ```
 
-Con `APP_ENV=development`, senza `RESEND_API_KEY` il codice di accesso viene stampato nel terminale (`[App Cibo] Codice di accesso per …`). In produzione sono obbligatori `BETTER_AUTH_SECRET` e `RESEND_API_KEY`: non viene usato il recapito nel log.
+Con `APP_ENV=development`, senza `RESEND_API_KEY` il codice di accesso viene stampato nel terminale (`[A Tavola] Codice di accesso per …`). In produzione sono obbligatori `BETTER_AUTH_SECRET` e `RESEND_API_KEY`: non viene usato il recapito nel log.
 
 Workers AI è disponibile solo in remoto: per provarlo in locale serve `npx wrangler login` e `CF_REMOTE=1 npm run dev`. Senza, usa il provider Claude (imposta `ANTHROPIC_API_KEY` in `.dev.vars`).
 
@@ -90,13 +90,14 @@ npm run build
 | `CLAUDE_MODEL_RECIPE` | `claude-sonnet-5-5` | `writeRecipe`, `findSourceUrl` |
 | `CLAUDE_MODEL_FAST` | `claude-haiku-5-5` | `replaceMeal`, `mapIngredient` |
 | `WORKERS_AI_MODEL` | `@cf/meta/llama-4-scout-17b-16e-instruct` | modello Workers AI |
-| `EMAIL_FROM` | `App Cibo <onboarding@resend.dev>` | mittente email |
+| `EMAIL_FROM` | `A Tavola <onboarding@resend.dev>` | mittente email |
 | `APP_ENV` | `production` | `development` in `.dev.vars` abilita il recapito OTP nel terminale |
 
 ## Funzioni implementate
 
 - Login email con OTP salvato come hash, onboarding, nucleo personale, inviti monouso, profilo e assenze ricorrenti.
 - Menù settimanale con Claude / Workers AI, fallback, controllo allergie nel codice (anche sui pasti fissati), porzioni, preferiti, ricette proprie e link da risultati di ricerca.
+- Foto ricette recuperate dai metadati della pagina originale, senza generazione immagini, chiavi fotografiche o chiamate AI aggiuntive. [Flusso e limiti](docs/recipe-images.md).
 - Rifiuti e apprendimento per persona, con sostituzione del pasto.
 - Spesa aggregata per reparto e data d'acquisto, voci manuali, spunte condivise con aggiornamento ogni 5 secondi mentre la pagina è visibile. Il ricalcolo conserva le spunte.
 - «Spesa fatta» conferma le quantità e carica gli acquisti in dispensa una sola volta. Le voci ancora da acquistare possono essere spuntate successivamente e vengono caricate senza duplicati.

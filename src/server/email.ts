@@ -12,7 +12,7 @@ export async function sendLoginCode(env: Env, email: string, otp: string): Promi
       throw new Error("RESEND_API_KEY non configurato");
     }
     devOutbox.set(email.toLowerCase(), otp);
-    console.log(`[App Cibo] Codice di accesso per ${email}: ${otp}`);
+    console.log(`[A Tavola] Codice di accesso per ${email}: ${otp}`);
     return;
   }
   const res = await fetch("https://api.resend.com/emails", {
@@ -22,9 +22,9 @@ export async function sendLoginCode(env: Env, email: string, otp: string): Promi
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: env.EMAIL_FROM || "App Cibo <onboarding@resend.dev>",
+      from: env.EMAIL_FROM || "A Tavola <onboarding@resend.dev>",
       to: [email],
-      subject: `Il tuo codice App Cibo: ${otp}`,
+      subject: `Il tuo codice A Tavola: ${otp}`,
       text: `Ciao!\n\nIl tuo codice di accesso è ${otp}.\nScade tra 10 minuti.\n\nSe non hai richiesto tu l'accesso, ignora questa email.`,
       html: `<p>Ciao!</p><p>Il tuo codice di accesso è <strong style="font-size:22px;letter-spacing:4px">${otp}</strong>.</p><p>Scade tra 10 minuti. Se non hai richiesto tu l'accesso, ignora questa email.</p>`,
     }),

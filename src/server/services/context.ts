@@ -62,6 +62,7 @@ interface RecipeRow {
   ingredients: string;
   steps: string | null;
   source_url: string | null;
+  image_url: string | null;
   kind: Recipe["kind"];
   details_status: Recipe["details_status"];
 }
@@ -82,12 +83,13 @@ export function rowToRecipe(r: RecipeRow): Recipe {
     ingredients,
     steps: r.steps,
     source_url: r.source_url,
+    image_url: r.image_url,
     kind: r.kind,
     details_status: r.details_status,
   };
 }
 
-const RECIPE_COLS = "id, household_id, title, dish_family, minutes, servings, ingredients, steps, source_url, kind, details_status";
+const RECIPE_COLS = "id, household_id, title, dish_family, minutes, servings, ingredients, steps, source_url, image_url, kind, details_status";
 
 export async function getRecipe(db: D1Database, householdId: string, id: string): Promise<Recipe | null> {
   const rows = await all<RecipeRow>(db, `SELECT ${RECIPE_COLS} FROM recipes WHERE id = ? AND household_id = ?`, id, householdId);

@@ -89,7 +89,7 @@ export async function buildMealViews(db: D1Database, ctx: HouseholdCtx, meals: M
         speed: m.speed,
         pinned: !!m.pinned,
         status: m.status,
-        recipe: r ? { id: r.id, title: r.title, minutes: r.minutes, servings: r.servings, dish_family: r.dish_family, ingredients: r.ingredients } : null,
+        recipe: r ? { id: r.id, title: r.title, minutes: r.minutes, servings: r.servings, dish_family: r.dish_family, ingredients: r.ingredients, image_url: r.image_url, source_url: r.source_url } : null,
         kcal: k?.kcal ?? null,
         kcal_partial: k?.partial ?? false,
         present,

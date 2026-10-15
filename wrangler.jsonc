@@ -29,7 +29,7 @@
     "CLAUDE_MODEL_RECIPE": "claude-sonnet-5-5",
     "CLAUDE_MODEL_FAST": "claude-haiku-5-5",
     "WORKERS_AI_MODEL": "@cf/meta/llama-4-scout-17b-16e-instruct",
-    "EMAIL_FROM": "App Cibo <onboarding@resend.dev>"
+    "EMAIL_FROM": "A Tavola <onboarding@resend.dev>"
     // Secret (wrangler secret put ...): ANTHROPIC_API_KEY, RESEND_API_KEY, BETTER_AUTH_SECRET
     // Opzionali: BETTER_AUTH_URL, ADMIN_EMAIL, BRAVE_SEARCH_API_KEY
   },

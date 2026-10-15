@@ -1,14 +1,19 @@
 {
-  "name": "App Cibo",
-  "short_name": "Cibo",
-  "description": "Menù settimanale, spesa e dispensa per la famiglia",
+  "name": "A Tavola",
+  "short_name": "A Tavola",
+  "description": "La settimana buona, per tutta la famiglia. Menù, spesa e dispensa.",
   "lang": "it",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#fbf7f0",
-  "theme_color": "#fbf7f0",
+  "background_color": "#f7faf6",
+  "theme_color": "#f7faf6",
   "icons": [
-    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
   ]
 }

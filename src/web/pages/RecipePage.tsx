@@ -4,6 +4,7 @@ import type { Ingredient, MealView, Recipe } from "../../shared/types";
 import { SLOT_LABEL } from "../../shared/types";
 import { api } from "../api";
 import { ErrorBox, formatDay, Loading, useLoad } from "../ui";
+import { RecipePhoto } from "../RecipePhoto";
 
 interface Resp {
   recipe: Recipe;
@@ -71,6 +72,8 @@ export function RecipePage() {
           </span>
         </button>
       </div>
+
+      <RecipePhoto image={r.image_url} source={r.source_url} title={r.title} />
 
       {data.meal?.warnings.map((w, i) => (
         <span key={i} className="badge-warn">

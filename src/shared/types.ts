@@ -66,6 +66,7 @@ export interface Recipe {
   ingredients: Ingredient[];
   steps: string | null;
   source_url: string | null;
+  image_url?: string | null;
   kind: RecipeKind;
   details_status: "none" | "ready";
   favorite?: boolean;
@@ -87,7 +88,7 @@ export interface MealView {
   speed: Speed;
   pinned: boolean;
   status: "planned" | "skipped";
-  recipe: Pick<Recipe, "id" | "title" | "minutes" | "servings" | "dish_family" | "ingredients"> | null;
+  recipe: Pick<Recipe, "id" | "title" | "minutes" | "servings" | "dish_family" | "ingredients" | "image_url" | "source_url"> | null;
   kcal: number | null;
   kcal_partial: boolean;
   present: string[]; // user id presenti

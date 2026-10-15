@@ -21,9 +21,9 @@ export function Family() {
 
   async function share() {
     if (!invite) return;
-    const text = `Unisciti alla nostra famiglia su App Cibo: ${invite.url}`;
+    const text = `Unisciti alla nostra famiglia su A Tavola: ${invite.url}`;
     if (navigator.share) {
-      await navigator.share({ title: "Invito App Cibo", text, url: invite.url }).catch(() => {});
+      await navigator.share({ title: "Invito A Tavola", text, url: invite.url }).catch(() => {});
     } else {
       await navigator.clipboard.writeText(invite.url);
       setCopied(true);

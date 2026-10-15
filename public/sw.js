@@ -1,5 +1,5 @@
 // Service worker minimale: guscio dell'app in cache, API sempre dalla rete.
-const CACHE = "app-cibo-v1";
+const CACHE = "a-tavola-v2";
 const SHELL = ["/", "/manifest.webmanifest", "/icon.svg"];
 
 self.addEventListener("install", (event) => {

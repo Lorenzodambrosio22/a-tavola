@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import type { Ingredient, Recipe } from "../../shared/types";
 import { api } from "../api";
 import { ErrorBox, Loading, Sheet, useLoad } from "../ui";
+import { RecipePhoto } from "../RecipePhoto";
 
 type Mode = "own" | "own_ai" | "own_known";
 
@@ -46,7 +47,9 @@ export function Recipes() {
           ) : (
             <div className="stack">
               {data.recipes.map((r) => (
-                <article key={r.id} className="card">
+                <article key={r.id} className="card recipe-list-card">
+                  <RecipePhoto image={r.image_url} source={r.source_url} title={r.title} compact />
+                  <div className="recipe-list-body">
                   <div className="row between">
                     <Link to={`/ricetta/${r.id}`} className="title" style={{ fontFamily: "var(--serif)", fontWeight: 600, fontSize: "1.1rem", color: "var(--ink)", textDecoration: "none" }}>
                       {r.favorite && <span className="star">★ </span>}
@@ -59,6 +62,7 @@ export function Recipes() {
                   <small className="muted">
                     {KIND_LABEL[r.kind]} · {r.minutes} min · {r.servings} porz.{r.kcal != null && ` · ${r.kcal} kcal/porz.`}
                   </small>
+                  </div>
                 </article>
               ))}
             </div>

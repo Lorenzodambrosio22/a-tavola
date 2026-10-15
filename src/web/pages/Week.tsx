@@ -6,6 +6,7 @@ import { api } from "../api";
 import { DAY_SHORT, ErrorBox, formatDay, Loading, memberName, Sheet, useLoad, useMe, weekdayOf } from "../ui";
 import { RejectSheet } from "./RejectSheet";
 import { ExpiringSoon } from "./Pantry";
+import { RecipePhoto } from "../RecipePhoto";
 
 interface CurrentResp {
   week: WeekView | null;
@@ -37,15 +38,16 @@ export function Week() {
 
   return (
     <>
-      <div className="page-head">
+      <div className="page-head week-head">
         <div>
-          <h1>{week ? "La settimana" : `Ciao ${me.user.name}!`}</h1>
+          <p className="eyebrow">MANGIARE BENE, INSIEME</p>
+          <h1>{week ? "La tua settimana buona." : `Ciao ${me.user.name}!`}</h1>
           {week ? (
             <p className="muted">
-              Dalla spesa di {formatDay(week.start_date)} · {week.status === "shopped" ? "spesa fatta" : "bozza"}
+              Da {formatDay(week.start_date)} · {week.status === "shopped" ? "La spesa è pronta" : "Il menù prende forma"}
             </p>
           ) : (
-            <p className="muted">Prepariamo il menù della settimana.</p>
+            <p className="muted">La settimana buona, per tutta la famiglia.</p>
           )}
         </div>
         {week && (
@@ -54,6 +56,8 @@ export function Week() {
           </button>
         )}
       </div>
+
+      {week && <div className="week-summary"><span><strong>7</strong> giorni da gustare</span><span><strong>{week.meals.filter((m) => m.status === "planned").length}</strong> pasti organizzati</span><span className="week-summary-note">Un pensiero in meno, ogni giorno.</span></div>}
 
       <ExpiringSoon />
 
@@ -309,6 +313,8 @@ function MealCard({ meal, week, onChange }: { meal: MealView; week: WeekView; on
 
   return (
     <article className={`card meal ${meal.status === "skipped" ? "skipped" : ""} ${!meal.recipe ? "empty" : ""}`}>
+      {meal.recipe && meal.status !== "skipped" && <RecipePhoto image={meal.recipe.image_url} source={meal.recipe.source_url} title={meal.recipe.title} compact />}
+      <div className="meal-body">
       <div className="row between">
         <span className="slot">
           {SLOT_LABEL[meal.slot]}
@@ -387,6 +393,7 @@ function MealCard({ meal, week, onChange }: { meal: MealView; week: WeekView; on
         </div>
       ) : null}
       <ErrorBox error={error} />
+      </div>
       {reject && meal.recipe && (
         <RejectSheet
           meal={meal}

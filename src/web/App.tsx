@@ -15,6 +15,7 @@ import { Shopping } from "./pages/Shopping";
 import { Pantry } from "./pages/Pantry";
 import { Compare } from "./pages/Compare";
 import { Ingredients } from "./pages/Ingredients";
+import { Brand } from "./Brand";
 
 const TABS = [
   { to: "/", label: "Settimana", icon: "week" },
@@ -56,7 +57,7 @@ export function App() {
   return (
     <MeContext.Provider value={{ me, refresh, setMe }}>
       <main className="app">
-        <header className="app-brand"><NavLink to="/" aria-label="App Cibo, vai alla settimana"><span className="brand-mark">c.</span><span>app cibo</span></NavLink><NavLink to="/famiglia">{me.household.name} <span aria-hidden>↗</span></NavLink></header>
+        <header className="app-brand"><NavLink to="/" aria-label="A Tavola, vai alla settimana"><Brand /></NavLink><NavLink className="household-link" to="/famiglia"><Icon name="user" /><span>{me.household.name}</span></NavLink></header>
         <Routes>
           <Route path="/" element={<Week />} />
           <Route path="/ricetta/:id" element={<RecipePage />} />

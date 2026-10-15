@@ -10,6 +10,7 @@ import { all, newId, run } from "../db/sql";
 import { getRecipe, householdOwnRecipes, loadHouseholdCtx } from "../services/context";
 import { getRef, kcalTable, normalizeIngredients } from "../services/ingredients";
 import { ensureDetails } from "../services/recipes";
+import { ensureRecipeImage } from "../services/recipeImages";
 import { buildMealViews, type MealRow } from "../services/weekView";
 import { providerFor } from "./weeks";
 
@@ -54,6 +55,7 @@ recipeRoutes.get("/recipes/:id", async (c) => {
       console.warn("ensureDetails", (e as Error).message);
     }
   }
+  recipe = await ensureRecipeImage(db, recipe);
   const fav = await all(db, "SELECT 1 FROM favorites WHERE user_id = ? AND recipe_id = ?", c.get("user").id, recipe.id);
   const full = { ...(await withKcal(db, recipe)), favorite: fav.length > 0 };
 
@@ -138,7 +140,7 @@ recipeRoutes.post("/recipes", async (c) => {
     if (data.mode === "own_ai") {
       // Stesso flusso del dettaglio: procedimento + link reale
       const r = await getRecipe(db, hid, id);
-      if (r) await ensureDetails(db, provider, r).catch((e) => console.warn("ensureDetails", (e as Error).message));
+      if (r) await ensureDetails(db, provider, r).then((ready) => ensureRecipeImage(db, ready)).catch((e) => console.warn("ensureDetails", (e as Error).message));
     }
   }
   const r = await getRecipe(db, hid, id);
