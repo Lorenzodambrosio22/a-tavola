@@ -18,11 +18,18 @@ Il nuovo nome visibile è **A Tavola**, con un tema chiaro anche sui dispositivi
 
 Verifiche: 75 test superati, controllo TypeScript e build completati. Nel browser sono state recuperate e visualizzate le foto del [risotto alla zucca di GialloZafferano](https://ricette.giallozafferano.it/Risotto-alla-zucca.html) e delle [trofie al pesto di Cucchiaio d'Argento](https://www.cucchiaio.it/ricetta/ricetta-trofie-pesto/), quindi riutilizzate nel menù. Il collaudo locale usa un account dedicato e non richiede generazioni AI.
 
-## Ricerca diretta e procedimento dalla pagina (16 ottobre)
+## Ricette dai siti, AI solo se mancano (16 ottobre)
 
-Il link non viene più cercato con l'AI: il server usa la ricerca interna di GialloZafferano (`/ricerca-ricette/<parole>/`) e sceglie il risultato con più parole in comune con il titolo. Dalla stessa pagina legge foto e procedimento (`recipeInstructions` della Recipe JSON-LD), togliendo i rimandi numerici alle foto.
+Per ogni piatto generato il server cerca una ricetta vera, senza AI e senza API a pagamento:
 
-- Dopo la generazione e a ogni apertura della settimana, i piatti generati vengono preparati in background (`waitUntil`), senza AI. Un tentativo senza risultati si ripete dopo un giorno. Il menù si aggiorna da solo due volte per mostrare le foto appena pronte.
-- All'apertura di un piatto si riprova la ricerca diretta; solo se GialloZafferano non ha quel piatto si torna all'AI (procedimento con `writeRecipe`, link con `findSourceUrl`).
-- Il procedimento è quello della ricetta originale: le quantità possono differire da quelle del menù, calcolate sulle persone a tavola. Il collegamento al sito resta visibile.
-- Cucchiaio d'Argento blocca la ricerca automatica (403), quindi non è usato per la ricerca. Se GialloZafferano cambia la pagina dei risultati, la ricerca restituisce null e resta il fallback.
+1. **Ricerca diretta** sulla ricerca interna di GialloZafferano, poi di Fatto in casa da Benedetta (due risultati per sito). Cucchiaio d'Argento blocca le richieste automatiche (403); Misya non ha dati strutturati.
+2. **Stesso piatto o niente**: la prima parola del risultato deve stare nel titolo, almeno il 75% delle parole del titolo deve comparire, al massimo due parole in più, nessuna delle quali è un ingrediente noto (`ingredients_ref`) o un metodo di cottura diverso. "Penne ai carciofi e pomodoro" non vale per "Penne al pomodoro".
+3. **Dalla pagina** (Recipe JSON-LD): foto, procedimento senza i rimandi numerici alle foto, ingredienti e porzioni.
+4. **Ingredienti convertiti in grammi** (`src/domain/recipeIngredients.ts`): unità (kg, cucchiai, spicchi, bicchieri…) e pezzi (uova, cipolle…) con pesi medi; le voci "q.b." e l'acqua non vanno nella spesa. Si scalano dalle porzioni del sito a quelle della ricetta del menù; i nomi si riconducono a quelli canonici (alias in cache, Haiku per i nuovi).
+5. **Allergie e divieti**: se la ricetta del sito contiene qualcosa di vietato a un membro del nucleo, si scarta e si prova la successiva.
+6. Gli ingredienti del menù si sostituiscono solo se nessuna settimana con quel piatto ha già fatto la spesa; la lista della spesa in bozza si ricalcola da sola.
+
+Se nessun sito ha il piatto, il procedimento lo scrive l'AI (Sonnet) e il piatto resta senza foto. Non si usa più la ricerca web a pagamento di Claude. I compiti semplici (sostituzioni, nomi degli ingredienti, stime) usano Haiku.
+
+- Dopo la generazione e a ogni apertura della settimana, i piatti si preparano in background (`waitUntil`). Se un sito non risponde, il background non paga l'AI e riprova dopo un giorno; all'apertura del piatto si ripiega subito sull'AI. Il menù si aggiorna da solo due volte per mostrare le foto.
+- Prova sui siti reali con i 14 piatti del menù di prova: 6 trovati (risotto alla zucca, minestrone, spaghetti aglio olio e peperoncino, frittata di zucchine, insalata di ceci e tonno, vellutata di carote), gli altri all'AI.

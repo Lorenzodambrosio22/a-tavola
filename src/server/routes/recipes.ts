@@ -49,7 +49,7 @@ recipeRoutes.get("/recipes/:id", async (c) => {
   let detailsError: string | null = null;
   if (recipe.details_status === "none" && (recipe.kind === "generated" || recipe.kind === "own_ai")) {
     try {
-      recipe = await ensureDetails(db, await providerFor(c), recipe);
+      recipe = await ensureDetails(db, await providerFor(c), recipe, hid);
     } catch (e) {
       detailsError = "Procedimento non disponibile ora. Riprova tra poco.";
       console.warn("ensureDetails", (e as Error).message);
@@ -140,7 +140,7 @@ recipeRoutes.post("/recipes", async (c) => {
     if (data.mode === "own_ai") {
       // Stesso flusso del dettaglio: procedimento + link reale
       const r = await getRecipe(db, hid, id);
-      if (r) await ensureDetails(db, provider, r).then((ready) => ensureRecipeImage(db, ready)).catch((e) => console.warn("ensureDetails", (e as Error).message));
+      if (r) await ensureDetails(db, provider, r, hid).then((ready) => ensureRecipeImage(db, ready)).catch((e) => console.warn("ensureDetails", (e as Error).message));
     }
   }
   const r = await getRecipe(db, hid, id);

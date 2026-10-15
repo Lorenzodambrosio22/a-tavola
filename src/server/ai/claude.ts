@@ -23,9 +23,9 @@ export class ClaudeBackend implements LlmBackend {
       case "week":
         return this.env.CLAUDE_MODEL_WEEK || "claude-sonnet-5-5";
       case "steps":
-      case "estimate":
       case "search":
         return this.env.CLAUDE_MODEL_RECIPE || "claude-sonnet-5-5";
+      // Compiti semplici (sostituzioni, nomi degli ingredienti, stime): Haiku
       default:
         return this.env.CLAUDE_MODEL_FAST || "claude-haiku-5-5";
     }

@@ -1,13 +1,14 @@
 import type { Recipe } from "../../shared/types";
 import { RECIPE_DOMAINS } from "../ai/prompts";
+import { parseYield } from "../../domain/recipeIngredients";
 import { first, run } from "../db/sql";
 
 const MAX_HTML_BYTES = 2 * 1024 * 1024;
 
 function decodeAttribute(value: string | null): string | null {
   if (!value) return null;
-  const named: Record<string, string> = { amp: "&", quot: '"', apos: "'", lt: "<", gt: ">" };
-  return value.replace(/&(#x[0-9a-f]+|#\d+|amp|quot|apos|lt|gt);/gi, (entity, code: string) => {
+  const named: Record<string, string> = { amp: "&", quot: '"', apos: "'", lt: "<", gt: ">", nbsp: " ", frac12: "½", frac14: "¼", frac34: "¾" };
+  return value.replace(/&(#x[0-9a-f]+|#\d+|amp|quot|apos|lt|gt|nbsp|frac12|frac14|frac34);/gi, (entity, code: string) => {
     if (!code.startsWith("#")) return named[code.toLowerCase()] ?? entity;
     const n = code[1].toLowerCase() === "x" ? parseInt(code.slice(2), 16) : Number(code.slice(1));
     return n > 0 && n <= 0x10ffff ? String.fromCodePoint(n) : entity;
@@ -70,6 +71,7 @@ export function cleanSteps(value: unknown): string | null {
     .map((s) =>
       s
         .replace(/<[^>]*>/g, " ")
+        .replace(/&nbsp;/gi, " ")
         .replace(/\s(\d{1,2})(?=\s|[;.,:!?)]|$)/g, (match, n: string, offset: number, all: string) => {
           if (Number(n) !== next || QUANTITY_AFTER.test(all.slice(offset + match.length))) return match;
           next++;
@@ -80,7 +82,7 @@ export function cleanSteps(value: unknown): string | null {
         .trim(),
     )
     .filter((s) => s.length > 2);
-  return steps.length ? steps.map((s, i) => `${i + 1}. ${s}`).join("\n\n").slice(0, 12_000) : null;
+  return steps.length ? steps.map((s) => decodeAttribute(s)!).map((s, i) => `${i + 1}. ${s}`).join("\n\n").slice(0, 12_000) : null;
 }
 
 function recipeSchema(value: unknown, depth = 0): Record<string, unknown> | null {
@@ -92,11 +94,18 @@ function recipeSchema(value: unknown, depth = 0): Record<string, unknown> | null
   return recipeSchema(o["@graph"], depth + 1) ?? recipeSchema(o.mainEntity, depth + 1);
 }
 
-export interface RecipePage { image: string | null; steps: string | null }
+export interface RecipePage {
+  image: string | null;
+  steps: string | null;
+  /** Righe "recipeIngredient" così come scritte dal sito. */
+  ingredients: string[];
+  yield: number | null;
+}
 
 /** Foto (Recipe JSON-LD, poi Open Graph e Twitter Card) e procedimento dalla pagina originale. */
 export async function extractRecipePage(html: string, pageUrl: string): Promise<RecipePage> {
   let recipeImage: string | null = null, steps: string | null = null, og: string | null = null, twitter: string | null = null;
+  let ingredients: string[] = [], servings: number | null = null, found = false;
   let json = "";
   const rewriter = new HTMLRewriter()
     .on("meta", { element(el) {
@@ -111,9 +120,13 @@ export async function extractRecipePage(html: string, pageUrl: string): Promise<
         el.onEndTag(() => {
           try {
             const recipe = recipeSchema(JSON.parse(json));
-            if (recipe) {
-              recipeImage ??= schemaImage(recipe.image, pageUrl);
-              steps ??= cleanSteps(recipe.recipeInstructions);
+            if (recipe && !found) {
+              found = true;
+              recipeImage = schemaImage(recipe.image, pageUrl);
+              steps = cleanSteps(recipe.recipeInstructions);
+              servings = parseYield(recipe.recipeYield);
+              const list = Array.isArray(recipe.recipeIngredient) ? recipe.recipeIngredient : [];
+              ingredients = list.filter((i): i is string => typeof i === "string").map((i) => decodeAttribute(i)!.trim()).filter(Boolean).slice(0, 60);
             }
           } catch { /* Prova gli altri metadati. */ }
         });
@@ -121,7 +134,7 @@ export async function extractRecipePage(html: string, pageUrl: string): Promise<
       text(chunk) { if (json.length < 256_000) json += chunk.text; },
     });
   await rewriter.transform(new Response(html, { headers: { "Content-Type": "text/html" } })).text();
-  return { image: recipeImage ?? og ?? twitter, steps };
+  return { image: recipeImage ?? og ?? twitter, steps, ingredients, yield: servings };
 }
 
 export async function extractRecipeImage(html: string, pageUrl: string): Promise<string | null> {

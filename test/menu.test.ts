@@ -191,7 +191,7 @@ describe("generazione del menù", () => {
 });
 
 describe("dettaglio ricetta", () => {
-  it("alla prima apertura scrive il procedimento e salva solo un link presente nei risultati di ricerca", async () => {
+  it("se nessun sito ha il piatto, alla prima apertura il procedimento lo scrive l'AI, senza ricerca web", async () => {
     const { anna } = await family();
     const claude = new FakeBackend("claude").queue("week", RECORDED.week).queue("meal", RECORDED.replaceOk("2030-01-05", "dinner"));
     useFakes(claude);
@@ -199,17 +199,13 @@ describe("dettaglio ricetta", () => {
     const meal = mealAt(week, "2030-01-07", "dinner");
 
     claude.queue("steps", RECORDED.stepsFenced);
-    // il modello "inventa" un URL non presente nei risultati: va scartato
-    claude.search = {
-      candidates: ["https://www.example.com/blog/frittata", "https://www.giallozafferano.it/ricette/Frittata-di-zucchine.html"],
-      chosen: "https://www.ricette-inventate.it/frittata",
-    };
     const r = await anna.req("GET", `/api/recipes/${meal.recipe.id}?meal=${meal.id}`);
     expect(r.status).toBe(200);
     expect(r.data.recipe.steps).toContain("Scalda l'olio");
-    expect(r.data.recipe.source_url).toBe("https://www.giallozafferano.it/ricette/Frittata-di-zucchine.html");
+    expect(r.data.recipe.source_url).toBeNull();
     expect(r.data.recipe.details_status).toBe("ready");
     expect(r.data.scaled_ingredients.find((i: any) => i.name === "uova").grams).toBe(240);
+    expect(claude.count("search")).toBe(0);
 
     // seconda apertura: niente nuove chiamate
     const before = claude.calls.length;
@@ -217,23 +213,21 @@ describe("dettaglio ricetta", () => {
     expect(claude.calls.length).toBe(before);
   });
 
-  it("ricerca link fallita: ricetta senza link, nuovo tentativo alla prossima apertura", async () => {
+  it("AI non disponibile all'apertura: messaggio di errore e nuovo tentativo alla prossima apertura", async () => {
     const { anna } = await family();
     const claude = new FakeBackend("claude").queue("week", RECORDED.week).queue("meal", RECORDED.replaceOk("2030-01-05", "dinner"));
     useFakes(claude);
     const week = (await anna.req("POST", "/api/weeks/generate", { start_date: START })).data.week;
     const meal = mealAt(week, "2030-01-08", "dinner");
-    claude.queue("steps", RECORDED.steps);
-    claude.search = new Error("search down");
+    claude.queue("steps", new Error("AI down"));
     const r1 = await anna.req("GET", `/api/recipes/${meal.recipe.id}`);
-    expect(r1.data.recipe.steps).toContain("Cuoci la pasta");
-    expect(r1.data.recipe.source_url).toBeNull();
-    expect(r1.data.recipe.details_status).toBe("none");
+    expect(r1.data.recipe.steps).toBeNull();
+    expect(r1.data.details_error).toBeTruthy();
 
-    claude.search = { candidates: ["https://www.cucchiaio.it/ricetta/salmone-al-forno/"], chosen: "https://www.cucchiaio.it/ricetta/salmone-al-forno" };
+    claude.queue("steps", RECORDED.steps);
     const r2 = await anna.req("GET", `/api/recipes/${meal.recipe.id}`);
-    expect(r2.data.recipe.source_url).toBe("https://www.cucchiaio.it/ricetta/salmone-al-forno/");
-    expect(claude.count("steps")).toBe(1); // il procedimento non viene riscritto
+    expect(r2.data.recipe.steps).toContain("Cuoci la pasta");
+    expect(r2.data.recipe.details_status).toBe("ready");
   });
 
   it("ricette 'trova tu' e 'la so io'", async () => {
@@ -242,13 +236,12 @@ describe("dettaglio ricetta", () => {
     claude.queue("estimate", JSON.stringify({ dish_family: "parmigiana", minutes: 90, ingredients: [{ name: "melanzane", grams: 800 }, { name: "mozzarella", grams: 250 }, { name: "passata di pomodoro", grams: 500 }] }));
     claude.queue("estimate", JSON.stringify({ dish_family: "polpette", minutes: 40, ingredients: [{ name: "macinato misto", grams: 400 }, { name: "uova", grams: 60 }, { name: "pane raffermo", grams: 80 }] }));
     claude.queue("steps", RECORDED.steps);
-    claude.search = { candidates: ["https://www.giallozafferano.it/ricette/Parmigiana-di-melanzane.html"], chosen: null };
     useFakes(claude);
 
     const ai = await anna.req("POST", "/api/recipes", { mode: "own_ai", title: "Parmigiana di melanzane", servings: 4 });
     expect(ai.status).toBe(201);
     expect(ai.data.recipe.kind).toBe("own_ai");
-    expect(ai.data.recipe.source_url).toContain("giallozafferano");
+    expect(ai.data.recipe.source_url).toBeNull(); // nei test i siti non rispondono
     expect(ai.data.recipe.steps).toBeTruthy();
 
     const known = await anna.req("POST", "/api/recipes", { mode: "own_known", title: "Polpette della mamma", servings: 4 });

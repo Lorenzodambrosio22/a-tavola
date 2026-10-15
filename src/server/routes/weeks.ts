@@ -21,12 +21,16 @@ export async function providerFor(c: Context<AppEnv>) {
   return getProvider(c.env, hh?.provider);
 }
 
-/** Foto e procedimento dei piatti preparati dopo la risposta, senza AI e senza far attendere il menù. */
+/** Ricette dei piatti preparate dopo la risposta, senza far attendere il menù: siti prima, AI solo se mancano. */
 function prepareInBackground(c: Context<AppEnv>, week: WeekView | null) {
   const ids = week?.meals.flatMap((m) => (m.recipe ? [m.recipe.id] : [])) ?? [];
   if (!ids.length) return;
   try {
-    c.executionCtx.waitUntil(prepareRecipes(c.env.DB, ids));
+    const hid = c.get("householdId");
+    const run = providerFor(c)
+      .catch(() => null)
+      .then((provider) => prepareRecipes(c.env.DB, provider, hid, ids));
+    c.executionCtx.waitUntil(run);
   } catch {
     /* Nessun contesto di esecuzione: le ricette si preparano all'apertura. */
   }
