@@ -22,7 +22,7 @@ Il codice delle prime tre fasi è stato recuperato dal worktree locale `feat/v1`
 
 ## Configurazione e verifiche ancora necessarie
 
-- Creare o collegare D1 sull'account Cloudflare previsto, sostituendo l'ID segnaposto in `wrangler.jsonc`, poi applicare le migrazioni remote.
+- ~~D1 remoto~~ fatto il 15/10: database `app-cibo` (WEUR) sull'account personale, sei migrazioni applicate.
 - Configurare i secret di produzione: Better Auth, Resend e almeno un provider AI. Per il mittente Resend va usato un dominio verificato. Configurare `ADMIN_EMAIL` e, se serve per Workers AI, Brave Search.
 - Eseguire una generazione con i provider reali e verificare recapito email e ricerca delle fonti. La suite automatica usa fixture, non certifica i servizi esterni.
 - Rivedere i valori iniziali di nutrizione e conservazione prima dell'uso regolare: il riferimento è modificabile dall'admin.

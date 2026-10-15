@@ -1,6 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "app-cibo",
+  "account_id": "33b9a2554c759fce9a814a200654ddd5",
   "main": "src/server/index.ts",
   "compatibility_date": "2026-08-15",
   "compatibility_flags": ["nodejs_compat"],
@@ -12,8 +13,7 @@
     {
       "binding": "DB",
       "database_name": "app-cibo",
-      // Sostituisci con l'id restituito da `npx wrangler d1 create app-cibo`
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "ffd10310-9e31-4f4a-9935-de895f0607ca",
       "migrations_dir": "migrations"
     }
   ],
