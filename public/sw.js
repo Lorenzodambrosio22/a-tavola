@@ -1,6 +1,6 @@
 // Service worker minimale: guscio dell'app in cache, API sempre dalla rete.
-const CACHE = "a-tavola-v2";
-const SHELL = ["/", "/manifest.webmanifest", "/icon.svg"];
+const CACHE = "a-tavola-v3";
+const SHELL = ["/", "/manifest.webmanifest", "/icon-192.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)));
