@@ -39,3 +39,14 @@ Le credenziali di sviluppo sono in `.dev.vars` (ignorato da Git). I dati di coll
 - Migrazioni D1 locali: tutte e sei applicate.
 - Collaudo browser: OTP locale, onboarding, lista aggregata, spunte, conferma acquisti, trasferimento in dispensa e correzione quantità. Usate fixture soltanto nell'account `collaudo@example.com` sul database locale.
 - Accesso Cloudflare già presente per l'account personale; nessuna risorsa remota creata o pubblicata durante questo lavoro.
+
+## Prossimi passi (dopo il collaudo in famiglia)
+
+Idee annotate il 17/10/2026, da fare solo quando la v1 è collaudata. In ordine di priorità:
+
+1. **Stagione** — il menù preferisce frutta e verdura di stagione in Italia. Tabella "mese → prodotti" nel codice, passata al prompt e usata anche per segnalare in lista prodotti fuori stagione. Modifica piccola, solo AI e spesa.
+2. **Meteo** — città nelle impostazioni del nucleo, previsioni a 7 giorni da Open-Meteo (gratis, senza chiave). Solo indizio leggero: caldo → piatti freddi, freddo/pioggia → zuppe e forno. Non scavalca mai allergie, gusti e varietà.
+3. **Mercato** (inserimento manuale) — giorni del mercato del nucleo (es. martedì e sabato): pesce e verdura fresca nei giorni subito dopo, lista spesa divisa in "al mercato" e "al supermercato".
+4. **Supermercato** (inserimento manuale) — catena abituale e lista ordinata per reparto. Niente prezzi/disponibilità automatici: in Italia non ci sono API pubbliche affidabili e leggere i volantini dai siti è fragile.
+
+Restano fuori ambito anche le voci della spec (foto→calorie, Whisper, login Apple, App Store, più nuclei).
