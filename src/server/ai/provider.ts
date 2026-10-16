@@ -10,6 +10,8 @@ import {
   SYSTEM_MAP,
   SYSTEM_PLANNER,
   SYSTEM_RECIPE,
+  SYSTEM_SIDE,
+  sidePrompt,
   weekPrompt,
 } from "./prompts";
 import {
@@ -20,6 +22,7 @@ import {
   JSON_SCHEMAS,
   PlannedMealSchema,
   RecipeStepsSchema,
+  SideStepsSchema,
   WeekPlanSchema,
   type AiProvider,
   type LlmBackend,
@@ -116,6 +119,10 @@ export class LlmProvider implements AiProvider {
     return this.call("steps", SYSTEM_RECIPE, recipePrompt(input), RecipeStepsSchema);
   }
 
+  writeSide(input: Parameters<AiProvider["writeSide"]>[0]) {
+    return this.call("side", SYSTEM_SIDE, sidePrompt(input), SideStepsSchema);
+  }
+
   async findSourceUrl(title: string): Promise<string | null> {
     const { candidates, chosen } = await this.backend.searchRecipe(title);
     return pickSourceUrl(candidates, chosen);
@@ -179,6 +186,9 @@ export class FallbackProvider implements AiProvider {
   }
   writeRecipe(i: Parameters<AiProvider["writeRecipe"]>[0]) {
     return this.run((p) => p.writeRecipe(i));
+  }
+  writeSide(i: Parameters<AiProvider["writeSide"]>[0]) {
+    return this.run((p) => p.writeSide(i));
   }
   async findSourceUrl(title: string) {
     for (const p of this.chain) {

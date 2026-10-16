@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { setProviderFactory } from "../src/server/ai";
 import { cleanSteps, extractRecipePage } from "../src/server/services/recipeImages";
-import { rankRecipeLinks, resultLinks } from "../src/server/services/recipeSearch";
+import { rankRecipeLinks, resultLinks, splitSide } from "../src/server/services/recipeSearch";
 import { FakeBackend, RECORDED, useFakes } from "./fixtures/fake";
 import { family, START } from "./family";
 import { env } from "./helpers";
@@ -86,6 +86,14 @@ describe("ricerca diretta sui siti", () => {
     expect(rankRecipeLinks("Lasagne", ["https://ricette.giallozafferano.it/Lasagne-alla-Bolognese.html"], new Set(["carciofi"]))).toHaveLength(1);
   });
 
+  it("separa il contorno solo quando resta un piatto riconoscibile", () => {
+    expect(splitSide("Saltimbocca alla romana con insalata")).toEqual({ main: "Saltimbocca alla romana", side: "insalata" });
+    expect(splitSide("Petto di pollo al limone con spinaci")).toEqual({ main: "Petto di pollo al limone", side: "spinaci" });
+    expect(splitSide("Piadina con prosciutto, rucola e stracchino")).toBeNull();
+    expect(splitSide("Pasta con le sarde")).toBeNull();
+    expect(splitSide("Frittata di zucchine")).toBeNull();
+  });
+
   it("legge procedimento, ingredienti e porzioni togliendo i rimandi alle foto", async () => {
     const page = await extractRecipePage(recipePage({
       recipeYield: ["6", "6 persone"],
@@ -122,6 +130,26 @@ describe("ricette dai siti, AI solo se mancano", () => {
     expect(r.data.recipe.details_status).toBe("ready");
     expect(claude.count("steps")).toBe(0);
     expect(claude.count("search")).toBe(0);
+  });
+
+  it("piatto con contorno: ricetta del sito per il piatto principale, contorno scritto da Haiku e nella spesa", async () => {
+    const SALMONE = "https://ricette.giallozafferano.it/Salmone-al-forno.html";
+    sites({
+      [SALMONE]: recipePage({ recipeYield: "4", recipeIngredient: ["Salmone 800 g", "Limone 1"], recipeInstructions: ["Infornate il salmone a 200° per 15 minuti."] }),
+    });
+    const claude = new FakeBackend("claude");
+    claude.queue("side", '{"steps": "1. Lessate i broccoli per 8 minuti e conditeli con olio."}');
+    const { anna, week } = await generated(claude);
+    const meal = mealAt((await anna.req("GET", `/api/weeks/${week.id}`)).data.week, "2030-01-08", "dinner");
+    expect(meal.recipe).toMatchObject({ source_url: SALMONE, image_url: PHOTO });
+    const r = (await anna.req("GET", `/api/recipes/${meal.recipe.id}`)).data.recipe;
+    expect(r.steps).toBe("1. Infornate il salmone a 200° per 15 minuti.\n\nContorno: broccoli\n\n1. Lessate i broccoli per 8 minuti e conditeli con olio.");
+    const names = r.ingredients.map((i: any) => i.name);
+    expect(names).toContain("broccoli");
+    expect(r.ingredients).toEqual(expect.arrayContaining([{ name: "salmone", grams: 400 }]));
+    expect(names.filter((n: string) => n === "salmone")).toHaveLength(1);
+    expect(claude.count("side")).toBe(1);
+    expect(claude.count("steps")).toBe(0);
   });
 
   it("scarta la ricetta del sito che contiene un allergene del nucleo e prova il sito successivo", async () => {

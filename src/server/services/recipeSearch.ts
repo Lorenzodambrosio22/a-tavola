@@ -87,6 +87,19 @@ export function rankRecipeLinks(title: string, links: string[], ingredients: Set
     .map((r) => r.link);
 }
 
+/**
+ * "Saltimbocca alla romana con insalata" → piatto "Saltimbocca alla romana", contorno "insalata".
+ * Serve almeno un piatto di due parole: "Pasta con le sarde" o "Piadina con prosciutto" restano interi.
+ */
+export function splitSide(title: string): { main: string; side: string } | null {
+  const at = title.toLowerCase().lastIndexOf(" con ");
+  if (at < 0) return null;
+  const main = title.slice(0, at).trim();
+  const side = title.slice(at + 5).trim();
+  if (words(main).length < 2 || !words(side).length) return null;
+  return { main, side };
+}
+
 export function bestRecipeLink(title: string, links: string[]): string | null {
   return rankRecipeLinks(title, links)[0] ?? null;
 }

@@ -1,4 +1,4 @@
-import type { RecipeRequest, ReplaceRequest, WeekRequest, PersonPrefs } from "./types";
+import type { RecipeRequest, ReplaceRequest, SideRequest, WeekRequest, PersonPrefs } from "./types";
 import { QUICK_MAX_MINUTES } from "../../domain/week";
 
 const SLOT_IT = { breakfast: "colazione", lunch: "pranzo", dinner: "cena" } as const;
@@ -87,6 +87,13 @@ export const SYSTEM_RECIPE = `Sei un cuoco italiano. Scrivi il procedimento di u
 
 export function recipePrompt(req: RecipeRequest): string {
   return `Ricetta: ${req.title}\nPorzioni: ${req.servings}\nIngredienti:\n${req.ingredients.map((i) => `- ${i.name}: ${i.grams} g`).join("\n")}`;
+}
+
+export const SYSTEM_SIDE = `Sei un cuoco italiano. Il piatto principale ha già la sua ricetta: scrivi solo come preparare il contorno indicato, in italiano, in 1-4 passaggi numerati (1., 2., ...), brevi e pratici, con tempi quando servono. Usa gli ingredienti indicati (sale, pepe, olio e acqua sono sempre disponibili). Niente introduzioni né consigli finali. Rispondi solo con il JSON richiesto.`;
+
+export function sidePrompt(req: SideRequest): string {
+  const list = req.ingredients.length ? req.ingredients.map((i) => `- ${i.name}: ${i.grams} g`).join("\n") : "- (scegli tu, pochi ingredienti semplici)";
+  return `Piatto: ${req.dish}\nContorno: ${req.side}\nPorzioni: ${req.servings}\nIngredienti del contorno:\n${list}`;
 }
 
 export const SYSTEM_MAP = `Normalizzi nomi di ingredienti italiani. Per ogni input restituisci il nome canonico: se corrisponde a un elemento dell'elenco noto usa esattamente quel nome, altrimenti un nome generico italiano breve, minuscolo, senza quantità, marche o preparazioni (es. "cipolla tritata finemente" → "cipolle"). Rispondi solo con il JSON richiesto.`;

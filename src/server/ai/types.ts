@@ -57,6 +57,14 @@ export interface RecipeRequest {
   ingredients: { name: string; grams: number }[];
 }
 
+/** Contorno di un piatto la cui ricetta principale arriva da un sito. */
+export interface SideRequest {
+  dish: string;
+  side: string;
+  servings: number;
+  ingredients: { name: string; grams: number }[];
+}
+
 // ---------- Output (validato con zod) ----------
 
 const num = z.coerce.number();
@@ -82,6 +90,7 @@ export const WeekPlanSchema = z.object({ meals: z.array(PlannedMealSchema) });
 export type WeekPlan = z.infer<typeof WeekPlanSchema>;
 
 export const RecipeStepsSchema = z.object({ steps: z.string().trim().min(20).max(8000) });
+export const SideStepsSchema = z.object({ steps: z.string().trim().min(10).max(3000) });
 
 export const IngredientMapSchema = z.object({
   items: z.array(z.object({ input: z.string(), name: z.string() })),
@@ -136,6 +145,12 @@ export const JSON_SCHEMAS = {
     required: ["steps"],
     additionalProperties: false,
   },
+  side: {
+    type: "object",
+    properties: { steps: { type: "string" } },
+    required: ["steps"],
+    additionalProperties: false,
+  },
   ingredientMap: {
     type: "object",
     properties: {
@@ -178,13 +193,15 @@ export interface AiProvider {
   generateWeek(input: WeekRequest): Promise<WeekPlan>;
   replaceMeal(input: ReplaceRequest): Promise<PlannedMeal>;
   writeRecipe(input: RecipeRequest): Promise<{ steps: string }>;
+  /** Pochi passaggi per il solo contorno (compito facile: Haiku). */
+  writeSide(input: SideRequest): Promise<{ steps: string }>;
   findSourceUrl(title: string): Promise<string | null>;
   mapIngredient(names: string[], known: string[]): Promise<Record<string, string>>;
   /** Estensione: ingredienti stimati per ricette "trova tu"/"la so io" (§6.4). */
   estimateIngredients(title: string, servings: number): Promise<IngredientEstimate>;
 }
 
-export type Task = "week" | "meal" | "steps" | "ingredientMap" | "estimate";
+export type Task = "week" | "meal" | "steps" | "side" | "ingredientMap" | "estimate";
 
 /** Livello basso: un modello che risponde con testo JSON e (opzionalmente) cerca sul web. */
 export interface LlmBackend {

@@ -6,7 +6,7 @@ import { loadHouseholdCtx, RECIPE_COLS, rowToRecipe, type RecipeRow } from "./co
 import { getRef, normalizeIngredients } from "./ingredients";
 import { violationsFor } from "./menu";
 import { fetchRecipePage, type RecipePage } from "./recipeImages";
-import { ingredientWords, searchRecipeUrls } from "./recipeSearch";
+import { ingredientWords, searchRecipeUrls, splitSide } from "./recipeSearch";
 
 interface SiteRecipe {
   url: string;
@@ -51,6 +51,21 @@ async function canReplaceIngredients(db: D1Database, recipeId: string): Promise<
  * In background, se un sito non risponde, la ricetta resta 'none' e si riprova più tardi invece
  * di pagare l'AI; all'apertura esplicita del piatto si ripiega subito sull'AI.
  */
+/** Il contorno che la ricetta del sito non copre: passaggi di Haiku, o una riga semplice senza AI. */
+async function sideSteps(provider: AiProvider | null, recipe: Recipe, dish: string, side: string, ingredients: Ingredient[]): Promise<string> {
+  const heading = `Contorno: ${side}`;
+  if (provider) {
+    try {
+      const out = await provider.writeSide({ dish, side, servings: recipe.servings, ingredients });
+      return `${heading}\n\n${out.steps}`;
+    } catch (e) {
+      console.warn("writeSide", (e as Error).message);
+    }
+  }
+  const list = ingredients.map((i) => `${i.name} ${i.grams} g`).join(", ");
+  return `${heading}\n\nPreparate a parte il contorno${list ? ` con ${list}` : ""} e servitelo insieme al piatto.`;
+}
+
 export async function ensureDetails(
   db: D1Database,
   provider: AiProvider | null,
@@ -61,10 +76,16 @@ export async function ensureDetails(
   if (recipe.details_status === "ready") return recipe;
   if (recipe.kind === "own_known" || recipe.kind === "own") return recipe;
 
-  const search = recipe.source_url
-    ? { urls: [recipe.source_url], incomplete: false }
-    : await searchRecipeUrls(recipe.title, ingredientWords((await getRef(db)).keys()));
-  const site = await pickSiteRecipe(db, provider, householdId, recipe, search.urls);
+  const known = recipe.source_url ? null : ingredientWords((await getRef(db)).keys());
+  const search = known ? await searchRecipeUrls(recipe.title, known) : { urls: [recipe.source_url!], incomplete: false };
+  let site = await pickSiteRecipe(db, provider, householdId, recipe, search.urls);
+  // Piatto intero non trovato: si cerca il solo piatto principale e il contorno si aggiunge a parte
+  const split = !site && known ? splitSide(recipe.title) : null;
+  if (split) {
+    const main = await searchRecipeUrls(split.main, known!);
+    search.incomplete ||= main.incomplete;
+    site = await pickSiteRecipe(db, provider, householdId, recipe, main.urls);
+  }
 
   let { steps, ingredients } = recipe;
   let url: string | null = null;
@@ -73,7 +94,14 @@ export async function ensureDetails(
     url = site.url;
     steps = site.page.steps;
     image = site.page.image ?? image;
-    if (site.ingredients && (await canReplaceIngredients(db, recipe.id))) ingredients = site.ingredients;
+    const replace = site.ingredients && (await canReplaceIngredients(db, recipe.id));
+    if (split) {
+      // Gli ingredienti del menù che la ricetta del sito non usa sono quelli del contorno
+      const fromSite = new Set((site.ingredients ?? []).map((i) => i.name));
+      const sideItems = site.ingredients ? recipe.ingredients.filter((i) => !fromSite.has(i.name)) : [];
+      steps = `${steps}\n\n${await sideSteps(provider, recipe, split.main, split.side, sideItems)}`;
+      if (replace) ingredients = [...site.ingredients!, ...sideItems];
+    } else if (replace) ingredients = site.ingredients!;
   } else if (provider && !steps && !(opts.background && search.incomplete)) {
     try {
       steps = (await provider.writeRecipe({ title: recipe.title, servings: recipe.servings, ingredients: recipe.ingredients })).steps;
