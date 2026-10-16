@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { auth } from "../api";
 import { ErrorBox } from "../ui";
 import { Brand } from "../Brand";
@@ -8,7 +8,25 @@ export function Login({ onDone }: { onDone: () => Promise<void> }) {
   const [otp, setOtp] = useState("");
   const [step, setStep] = useState<"email" | "code">("email");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    new URLSearchParams(window.location.search).has("login") ? "Accesso con Google non riuscito. Riprova." : null,
+  );
+  const [google, setGoogle] = useState(false);
+
+  useEffect(() => {
+    auth.options().then((o) => setGoogle(o.google), () => {});
+  }, []);
+
+  async function withGoogle() {
+    setBusy(true);
+    setError(null);
+    try {
+      await auth.google();
+    } catch (err) {
+      setError((err as Error).message);
+      setBusy(false);
+    }
+  }
 
   async function send(e: FormEvent) {
     e.preventDefault();
@@ -50,8 +68,16 @@ export function Login({ onDone }: { onDone: () => Promise<void> }) {
         <div>
           <p className="eyebrow">BENVENUTO A CASA</p>
           <h2>Facciamo spazio<br />alle cose buone.</h2>
-          <p className="muted">Accedi o crea il tuo account con un codice via email.</p>
+          <p className="muted">{google ? "Accedi o crea il tuo account con Google, oppure con un codice via email." : "Accedi o crea il tuo account con un codice via email."}</p>
         </div>
+        {google && step === "email" && (
+          <>
+            <button type="button" className="btn-primary btn-block" disabled={busy} onClick={() => void withGoogle()}>
+              Continua con Google
+            </button>
+            <p className="muted" style={{ textAlign: "center", margin: 0 }}>oppure</p>
+          </>
+        )}
         {step === "email" ? (
           <form onSubmit={send} className="stack">
             <div className="field">
@@ -59,7 +85,7 @@ export function Login({ onDone }: { onDone: () => Promise<void> }) {
               <input id="email" type="email" autoComplete="email" inputMode="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="nome@esempio.it" />
             </div>
             <ErrorBox error={error} />
-            <button className="btn-primary btn-block" disabled={busy || !email}>
+            <button className={google ? "btn-block" : "btn-primary btn-block"} disabled={busy || !email}>
               {busy ? "Invio…" : "Ricevi il codice"}
             </button>
           </form>

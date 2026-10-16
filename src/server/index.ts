@@ -30,7 +30,10 @@ app.onError((err, c) => {
 
 app.get("/api/health", (c) => c.json({ ok: true }));
 
-// Better Auth (login con codice via email)
+// Metodi di accesso disponibili (pubblico, per la pagina di login)
+app.get("/api/auth-options", (c) => c.json({ google: Boolean(c.env.GOOGLE_CLIENT_ID && c.env.GOOGLE_CLIENT_SECRET) }));
+
+// Better Auth (login con codice via email o con Google)
 app.on(["GET", "POST"], "/api/auth/*", (c) => getAuth(c.env, c.req.url).handler(c.req.raw));
 
 // API protette

@@ -7,6 +7,8 @@ export interface Env {
   BETTER_AUTH_URL?: string;
   RESEND_API_KEY?: string;
   EMAIL_FROM?: string;
+  GOOGLE_CLIENT_ID?: string;
+  GOOGLE_CLIENT_SECRET?: string;
   ADMIN_EMAIL?: string;
 
   ANTHROPIC_API_KEY?: string;
