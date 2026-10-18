@@ -26,7 +26,7 @@ Il codice delle prime tre fasi è stato recuperato dal worktree locale `feat/v1`
 - Configurare i secret di produzione: Better Auth, Resend e almeno un provider AI. Per il mittente Resend va usato un dominio verificato. Configurare `ADMIN_EMAIL` e, se serve per Workers AI, Brave Search.
 - Eseguire una generazione con i provider reali e verificare recapito email e ricerca delle fonti. La suite automatica usa fixture, non certifica i servizi esterni.
 - Rivedere i valori iniziali di nutrizione e conservazione prima dell'uso regolare: il riferimento è modificabile dall'admin.
-- Pubblicata il 16/10 su https://app-cibo.lorenzo-dambrosio-2004.workers.dev (secret impostati, mittente `onboarding@resend.dev`: accesso solo per l'admin finché manca un dominio). Collaudo con i servizi reali da fare.
+- Pubblicata il 16/10 su https://atavola.lorenzodambrosio.com (dal 18/10; workers.dev disattivato) (secret impostati, mittente `onboarding@resend.dev`: accesso solo per l'admin finché manca un dominio). Collaudo con i servizi reali da fare.
 - Installazione PWA su dispositivi reali; Capacitor e pubblicazione iOS restano fuori dall'attuale consegna, come da specifica.
 
 Le credenziali di sviluppo sono in `.dev.vars` (ignorato da Git). I dati di collaudo nel D1 locale sono separati dal database remoto.

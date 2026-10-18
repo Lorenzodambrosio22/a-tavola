@@ -3,6 +3,7 @@
   "name": "app-cibo",
   "account_id": "33b9a2554c759fce9a814a200654ddd5",
   "main": "src/server/index.ts",
+  "routes": [{ "pattern": "atavola.lorenzodambrosio.com", "custom_domain": true }],
   "compatibility_date": "2026-08-15",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {

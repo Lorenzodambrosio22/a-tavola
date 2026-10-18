@@ -2,7 +2,7 @@
 
 **An AI meal planner for a person or a family.** It builds the week's menu around everyone's allergies and tastes, turns it into one shopping list and keeps track of what's left in the pantry.
 
-Mobile-first PWA, in Italian. Live on Cloudflare Workers.
+Mobile-first PWA, in Italian. Live at [atavola.lorenzodambrosio.com](https://atavola.lorenzodambrosio.com) (sign-up is invite-only while in testing).
 
 | Sign in | The week | Shopping list | Your recipes |
 |---|---|---|---|
