@@ -53,7 +53,7 @@ function build(env: Env, baseURL: string) {
         expiresIn: 600,
         storeOTP: "hashed",
         async sendVerificationOTP({ email, otp }) {
-          await sendLoginCode(env, email, otp);
+          await sendLoginCode(env, email, otp, baseURL);
         },
       }),
     ],

@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { setProviderFactory } from "../src/server/ai";
-import { devMails } from "../src/server/email";
+import { devMails, sendAccessRequest } from "../src/server/email";
 import { FakeBackend, RECORDED, useFakes } from "./fixtures/fake";
 import { START } from "./family";
-import { login } from "./helpers";
+import { env, login } from "./helpers";
 
 afterEach(() => setProviderFactory(null));
 
@@ -64,6 +64,15 @@ describe("accesso su approvazione", () => {
     expect((await admin.req("POST", `/api/admin/users/${u.userId}/reject`)).status).toBe(200);
     expect((await u.req("GET", "/api/me")).data.access).toBe("rejected");
     expect((await u.req("POST", "/api/weeks/generate", { start_date: START })).status).toBe(403);
+  });
+
+  it("le email sono nello stile dell'app e non lasciano passare HTML dal nome", async () => {
+    const email = uniq("html");
+    await sendAccessRequest(env, "admin@example.com", { name: "<b>Eva</b>", email }, "http://localhost/admin/accessi?utente=x");
+    const mail = devMails.findLast((m) => m.to === "admin@example.com" && m.text.includes(email))!;
+    expect(mail.html).toContain("Qualcuno chiede");
+    expect(mail.html).toContain("&#60;b&#62;Eva");
+    expect(mail.html).not.toContain("<b>Eva</b>");
   });
 
   it("l'admin è approvato da subito", async () => {
