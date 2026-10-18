@@ -168,6 +168,10 @@ progress::-webkit-progress-value { background: var(--green); }
 .login .card h2 { font-size: 2rem; margin-bottom: 16px; }
 .login .card { padding: 32px 28px; box-shadow: none; }
 .login .card form { margin-top: 28px; }
+.btn-google { display: flex; align-items: center; justify-content: center; gap: 10px; background: #fff; color: var(--ink); }
+.login-divider { display: flex; align-items: center; gap: 12px; margin: 4px 0; color: var(--ink-2); font-size: .85rem; }
+.login-divider::before, .login-divider::after { content: ""; flex: 1; border-top: 1px solid var(--line); }
+.login .card .login-divider + form { margin-top: 4px; }
 button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 button:not(:disabled):hover, .btn:hover { filter: brightness(.96); }
