@@ -6,6 +6,7 @@ import { presence } from "../../domain/week";
 import type { AppEnv } from "../env";
 import { body, fail } from "../http";
 import { getProvider } from "../ai";
+import { meteredFor } from "../services/aiQuota";
 import { all, first, run, stmt } from "../db/sql";
 import { getHousehold } from "../db/household";
 import { getRecipe, householdOwnRecipes, loadHouseholdCtx } from "../services/context";
@@ -18,7 +19,7 @@ export const weekRoutes = new Hono<AppEnv>();
 
 export async function providerFor(c: Context<AppEnv>) {
   const hh = await getHousehold(c.env.DB, c.get("householdId"));
-  return getProvider(c.env, hh?.provider);
+  return meteredFor(c, getProvider(c.env, hh?.provider));
 }
 
 /** Ricette dei piatti preparate dopo la risposta, senza far attendere il menù: siti prima, AI solo se mancano. */

@@ -218,3 +218,5 @@ export class AiUnavailable extends Error {
     super(message);
   }
 }
+/** Limite giornaliero raggiunto (429). Estende AiUnavailable così i ripieghi esistenti la lasciano passare. */
+export class AiQuotaExceeded extends AiUnavailable {}

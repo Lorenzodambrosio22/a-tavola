@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { emailOTP } from "better-auth/plugins";
 import type { Env } from "./env";
 import { sendLoginCode } from "./email";
+import { isAdmin, notifyAccessRequest } from "./access";
 
 function build(env: Env, baseURL: string) {
   if (!env.BETTER_AUTH_SECRET && env.APP_ENV !== "development" && env.APP_ENV !== "test") {
@@ -16,6 +17,18 @@ function build(env: Env, baseURL: string) {
     user: {
       additionalFields: {
         breakfast: { type: "boolean", defaultValue: false, input: false },
+        // In attesa finché l'admin non approva (vedi access.ts)
+        access: { type: "string", defaultValue: "pending", input: false },
+      },
+    },
+    databaseHooks: {
+      user: {
+        create: {
+          before: async (user) => ({ data: { ...user, access: isAdmin(env, user.email) ? "approved" : "pending" } }),
+          after: async (user) => {
+            if (!isAdmin(env, user.email)) await notifyAccessRequest(env, baseURL, { id: user.id, name: user.name ?? "", email: user.email });
+          },
+        },
       },
     },
     socialProviders:

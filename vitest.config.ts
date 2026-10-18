@@ -18,6 +18,8 @@ export default defineConfig(async () => {
             BETTER_AUTH_URL: "http://localhost",
             AI_PROVIDER_DEFAULT: "claude",
             ADMIN_EMAIL: "admin@example.com",
+            // I limiti veri si provano in ai-limits.test.ts
+            AI_LIMIT_GLOBAL_DAY: "100000",
           },
         },
       }),

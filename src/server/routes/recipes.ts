@@ -13,6 +13,7 @@ import { ensureDetails } from "../services/recipes";
 import { ensureRecipeImage } from "../services/recipeImages";
 import { buildMealViews, type MealRow } from "../services/weekView";
 import { providerFor } from "./weeks";
+import { AiQuotaExceeded } from "../ai";
 
 export const recipeRoutes = new Hono<AppEnv>();
 
@@ -51,7 +52,7 @@ recipeRoutes.get("/recipes/:id", async (c) => {
     try {
       recipe = await ensureDetails(db, await providerFor(c), recipe, hid);
     } catch (e) {
-      detailsError = "Procedimento non disponibile ora. Riprova tra poco.";
+      detailsError = e instanceof AiQuotaExceeded ? e.message : "Procedimento non disponibile ora. Riprova tra poco.";
       console.warn("ensureDetails", (e as Error).message);
     }
   }

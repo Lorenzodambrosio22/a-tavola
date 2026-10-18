@@ -15,6 +15,8 @@ import { Shopping } from "./pages/Shopping";
 import { Pantry } from "./pages/Pantry";
 import { Compare } from "./pages/Compare";
 import { Ingredients } from "./pages/Ingredients";
+import { Pending } from "./pages/Pending";
+import { Access } from "./pages/Access";
 import { Brand } from "./Brand";
 
 const TABS = [
@@ -52,6 +54,7 @@ export function App() {
       </div>
     );
   if (state === "anon" || !me) return <Login onDone={refresh} />;
+  if (me.access !== "approved") return <Pending me={me} onRefresh={refresh} />;
   if (!me.onboarded) return <MeContext.Provider value={{ me, refresh, setMe }}><Onboarding /></MeContext.Provider>;
 
   return (
@@ -66,6 +69,7 @@ export function App() {
           <Route path="/dispensa" element={<Pantry />} />
           <Route path="/admin/confronto" element={<Compare />} />
           <Route path="/admin/ingredienti" element={<Ingredients />} />
+          <Route path="/admin/accessi" element={<Access />} />
           <Route path="/famiglia" element={<Family />} />
           <Route path="/profilo" element={<Profile />} />
           <Route path="/invito/:token" element={<Invite />} />

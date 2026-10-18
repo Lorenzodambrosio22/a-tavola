@@ -25,12 +25,12 @@ async function me(c: Context<AppEnv>): Promise<MeResponse> {
     first<{ name: string; breakfast: number }>(c.env.DB, `SELECT name, breakfast FROM "user" WHERE id = ?`, user.id),
     all<{ dish_id: string }>(c.env.DB, "SELECT dish_id FROM taste_dishes WHERE user_id = ? ORDER BY dish_id", user.id),
   ]);
-  const admin = (c.env.ADMIN_EMAIL || "").toLowerCase().split(",").map((s) => s.trim()).filter(Boolean);
   return {
     user: { id: user.id, email: user.email, name: u?.name ?? "", breakfast: !!u?.breakfast, taste_dishes: tastes.map((t) => t.dish_id) },
     household: { id: hid, name: hh?.name ?? "", role: c.get("role"), provider: hh?.provider ?? null },
     members,
-    isAdmin: admin.includes(user.email.toLowerCase()),
+    isAdmin: c.get("isAdmin"),
+    access: c.get("access"),
     onboarded: !!u?.name?.trim(),
   };
 }

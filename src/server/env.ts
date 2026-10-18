@@ -1,3 +1,5 @@
+import type { Access } from "./access";
+
 export interface Env {
   DB: D1Database;
   AI?: Ai;
@@ -18,6 +20,9 @@ export interface Env {
   CLAUDE_MODEL_FAST?: string;
   WORKERS_AI_MODEL?: string;
   BRAVE_SEARCH_API_KEY?: string;
+  /** Operazioni AI al giorno per utente e per tutta l'app (default in services/aiQuota.ts). */
+  AI_LIMIT_USER_DAY?: string;
+  AI_LIMIT_GLOBAL_DAY?: string;
   APP_ENV?: string;
 }
 
@@ -29,6 +34,10 @@ export interface SessionUser {
 
 export interface AppVars {
   user: SessionUser;
+  access: Access;
+  isAdmin: boolean;
+  /** Prenotazione dell'operazione AI della richiesta (una sola per richiesta). */
+  aiCharge?: Promise<{ day: string }>;
   householdId: string;
   role: "owner" | "member";
 }

@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#f7faf6" />
+<link rel="icon" href="/icon-32.png" type="image/png" sizes="32x32" />
+<title>Privacy · A Tavola</title>
+<meta name="description" content="Quali dati usa A Tavola e perché." />
+<style>
+:root { --bg:#f7faf6; --surface:#fff; --ink:#213e30; --ink-2:#647466; --line:#e0e9dc; --accent:#286548;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif; color-scheme:light; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.6 var(--sans); -webkit-font-smoothing:antialiased; }
+main { max-width:720px; margin:0 auto; padding:32px 16px 64px; }
+.brand { display:inline-flex; align-items:center; gap:10px; font-weight:700; color:var(--ink); text-decoration:none; margin-bottom:32px; }
+.brand img { width:28px; height:28px; border-radius:8px; }
+.eyebrow { font-size:.67rem; letter-spacing:.14em; font-weight:700; color:var(--accent); margin:0 0 12px; }
+h1 { font-family:var(--serif); font-weight:500; font-size:clamp(2rem,6vw,2.8rem); line-height:1.1; letter-spacing:-.02em; margin:0 0 12px; }
+h2 { font-family:var(--serif); font-weight:600; font-size:1.2rem; margin:32px 0 8px; }
+.card { background:var(--surface); border:1px solid var(--line); border-radius:26px; padding:28px; margin-top:24px; }
+.card h2:first-child { margin-top:0; }
+p, li { color:var(--ink); }
+.muted { color:var(--ink-2); }
+ul { padding-left:20px; }
+a { color:var(--accent); }
+footer { margin-top:24px; font-size:.85rem; color:var(--ink-2); display:flex; gap:12px; flex-wrap:wrap; }
+footer a { color:var(--ink-2); }
+</style>
+</head>
+<body>
+<main>
+<a class="brand" href="/"><img src="/icon-96.png" alt="" />A Tavola</a>
+<p class="eyebrow">PRIVACY</p>
+<h1>I tuoi dati,<br />detti chiaramente.</h1>
+<p class="muted">Ultimo aggiornamento: 18 ottobre 2026</p>
+<div class="card">
+<h2>Chi gestisce l'app</h2>
+<p>A Tavola è un progetto personale di Lorenzo D'Ambrosio, titolare del trattamento. Per qualsiasi domanda: <a href="mailto:lorenzo.dambrosio.2004@gmail.com">lorenzo.dambrosio.2004@gmail.com</a>.</p>
+
+<h2>Quali dati raccogliamo</h2>
+<ul>
+<li><strong>Nome ed email</strong>, per farti accedere (con un codice via email o con Google; da Google riceviamo solo nome, email e foto del profilo).</li>
+<li><strong>Preferenze alimentari e allergie</strong> tue e della tua famiglia, i piatti che piacciono o no, le assenze ai pasti.</li>
+<li><strong>Quello che crei nell'app</strong>: menù, ricette, lista della spesa, dispensa.</li>
+<li>Un <strong>cookie tecnico di sessione</strong> per restare connesso. Niente cookie di profilazione, niente pubblicità, niente statistiche di terze parti.</li>
+</ul>
+<p>Le allergie sono dati relativi alla salute: le inserisci tu, solo se vuoi, e servono esclusivamente a tenere fuori dal menù ciò che non puoi mangiare.</p>
+
+<h2>Come li usiamo</h2>
+<p>Solo per far funzionare l'app: generare il menù settimanale, scrivere le ricette, preparare la spesa. Non vendiamo né cediamo i dati a nessuno e non li usiamo per pubblicità.</p>
+
+<h2>Con chi passano</h2>
+<ul>
+<li><strong>Anthropic (API Claude)</strong>: per generare menù e ricette inviamo i testi necessari (nomi di chi è a tavola, preferenze, allergie, piatti recenti). Secondo le condizioni commerciali di Anthropic, i dati inviati via API non vengono usati per addestrare i modelli.</li>
+<li><strong>Cloudflare</strong>: ospita l'app e il database; in alternativa a Claude può generare i testi con Workers AI.</li>
+<li><strong>Resend</strong>: invia le email (codice di accesso, avvisi).</li>
+<li><strong>Google</strong>: solo se scegli di accedere con Google.</li>
+</ul>
+
+<h2>Per quanto tempo</h2>
+<p>Finché hai un account. Se chiedi la cancellazione, eliminiamo account, preferenze e contenuti entro 30 giorni.</p>
+
+<h2>I tuoi diritti</h2>
+<p>Puoi chiedere in qualsiasi momento di vedere, correggere, esportare o cancellare i tuoi dati scrivendo a <a href="mailto:lorenzo.dambrosio.2004@gmail.com">lorenzo.dambrosio.2004@gmail.com</a>. Puoi anche rivolgerti al Garante per la protezione dei dati personali.</p>
+</div>
+<footer><a href="/">Torna all'app</a><a href="/privacy">Privacy</a><a href="/terms">Termini</a></footer>
+</main>
+</body>
+</html>

@@ -34,6 +34,8 @@ export interface MeResponse {
   household: { id: string; name: string; role: "owner" | "member"; provider: ProviderName | null };
   members: Member[];
   isAdmin: boolean;
+  /** "pending" e "rejected" vedono solo la pagina di attesa. */
+  access: "pending" | "approved" | "rejected";
   onboarded: boolean;
 }
 

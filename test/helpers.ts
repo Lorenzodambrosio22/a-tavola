@@ -34,8 +34,11 @@ function cookieFrom(res: Response): string {
   return list.map((c) => c.split(";")[0]).join("; ");
 }
 
-/** Esegue il login con codice email (senza Resend il codice finisce in devOutbox). */
-export async function login(email: string, name?: string): Promise<Client> {
+/**
+ * Esegue il login con codice email (senza Resend il codice finisce in devOutbox).
+ * I nuovi iscritti sono in attesa: per comodità i test li approvano, salvo `{ approve: false }`.
+ */
+export async function login(email: string, name?: string, opts: { approve?: boolean } = {}): Promise<Client> {
   const send = await raw("POST", "/api/auth/email-otp/send-verification-otp", { email, type: "sign-in" });
   if (send.status !== 200) throw new Error(`send otp ${send.status}: ${await send.text()}`);
   const otp = devOutbox.get(email.toLowerCase());
@@ -60,6 +63,7 @@ export async function login(email: string, name?: string): Promise<Client> {
       return { status: res.status, data };
     },
   };
+  if (opts.approve !== false) await env.DB.prepare(`UPDATE "user" SET access = 'approved' WHERE id = ? AND access = 'pending'`).bind(client.userId).run();
   if (name) await client.req("PATCH", "/api/me", { name });
   return client;
 }

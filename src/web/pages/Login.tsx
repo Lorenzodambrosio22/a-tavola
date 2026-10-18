@@ -108,8 +108,20 @@ export function Login({ onDone }: { onDone: () => Promise<void> }) {
             </button>
           </form>
         )}
+        <LegalLinks />
       </div>
     </div>
+  );
+}
+
+/** Link a privacy e termini (pagine statiche in public/). */
+export function LegalLinks() {
+  return (
+    <p className="legal-links">
+      <a href="/privacy">Privacy</a>
+      <span aria-hidden="true">·</span>
+      <a href="/terms">Termini</a>
+    </p>
   );
 }
 

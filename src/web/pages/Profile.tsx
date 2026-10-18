@@ -71,6 +71,9 @@ export function Profile() {
 
       <section className="section stack">
         {me.isAdmin && (
+          <Link to="/admin/accessi" className="btn btn-block">Accessi e consumo AI</Link>
+        )}
+        {me.isAdmin && (
           <Link to="/admin/ingredienti" className="btn btn-block">Ingredienti di riferimento</Link>
         )}
         {me.isAdmin && (

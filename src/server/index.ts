@@ -2,13 +2,13 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { AppEnv, Env } from "./env";
 import { getAuth } from "./auth";
-import { requireAuth } from "./http";
+import { requireApproved, requireAuth } from "./http";
 import { householdRoutes } from "./routes/household";
 import { constraintRoutes } from "./routes/constraints";
 import { weekRoutes } from "./routes/weeks";
 import { recipeRoutes } from "./routes/recipes";
 import { rejectionRoutes } from "./routes/rejections";
-import { AiUnavailable } from "./ai";
+import { AiQuotaExceeded, AiUnavailable } from "./ai";
 import { shoppingRoutes } from "./routes/shopping";
 import { pantryRoutes } from "./routes/pantry";
 import { adminRoutes } from "./routes/admin";
@@ -20,6 +20,9 @@ export const app = new Hono<AppEnv>();
 app.onError((err, c) => {
   if (err instanceof HTTPException) {
     return c.json({ error: err.message }, err.status);
+  }
+  if (err instanceof AiQuotaExceeded) {
+    return c.json({ error: err.message }, 429);
   }
   if (err instanceof AiUnavailable) {
     return c.json({ error: "Il servizio AI non risponde. Riprova tra poco." }, 503);
@@ -46,6 +49,7 @@ api.use("*", async (c, next) => {
   }
   await next();
 });
+api.use("*", requireApproved);
 api.route("/", householdRoutes);
 api.route("/", constraintRoutes);
 api.route("/", weekRoutes);
