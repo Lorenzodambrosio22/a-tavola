@@ -1,17 +1,23 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { MeResponse } from "../../shared/types";
 import { api } from "../api";
 import { ErrorBox, useMe } from "../ui";
 
 export function Family() {
-  const { me, setMe } = useMe();
+  const { me, setMe, refresh } = useMe();
   const [invite, setInvite] = useState<{ url: string; expires_at: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const owner = me.household.role === "owner";
 
+  // Chi ha appena accettato un invito deve comparire senza ricaricare l'app
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
   async function createInvite() {
     setError(null);
+    setCopied(false);
     try {
       setInvite(await api("POST", "/api/household/invites"));
     } catch (e) {
@@ -67,12 +73,15 @@ export function Family() {
       {owner && (
         <div className="card stack">
           <h2>Invita qualcuno</h2>
-          <p className="muted">Il link vale 7 giorni e si può usare una sola volta. Chi accetta lascia il proprio nucleo e porta con sé le sue ricette.</p>
+          <p className="muted">Ogni link vale 7 giorni e serve a una sola persona: per invitarne due, creane due. Chi accetta lascia il proprio nucleo e porta con sé le sue ricette.</p>
           {invite ? (
             <>
               <input readOnly value={invite.url} onFocus={(e) => e.target.select()} aria-label="Link di invito" />
               <button className="btn-primary btn-block" onClick={() => void share()}>
                 {copied ? "Copiato!" : "Condividi il link"}
+              </button>
+              <button className="btn-ghost btn-block" onClick={() => void createInvite()}>
+                Crea un altro link
               </button>
             </>
           ) : (

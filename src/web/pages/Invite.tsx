@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import type { MeResponse } from "../../shared/types";
 import { api } from "../api";
+import { forgetInvite } from "../pendingInvite";
 import { ErrorBox, Loading, useLoad, useMe } from "../ui";
 
 export function Invite() {
@@ -10,6 +11,11 @@ export function Invite() {
   const nav = useNavigate();
   const { data, error } = useLoad<{ household_name: string; valid: boolean }>(`/api/household/invites/${encodeURIComponent(token)}`);
   const [err, setErr] = useState<string | null>(null);
+
+  // Una volta mostrato l'esito, il link non va più riproposto
+  useEffect(() => {
+    if (error || data) forgetInvite();
+  }, [error, data]);
 
   async function accept() {
     try {

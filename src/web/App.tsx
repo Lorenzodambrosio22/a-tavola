@@ -18,6 +18,7 @@ import { Ingredients } from "./pages/Ingredients";
 import { Pending } from "./pages/Pending";
 import { Access } from "./pages/Access";
 import { Brand } from "./Brand";
+import { pendingInvite as storedInvite, rememberInvite } from "./pendingInvite";
 
 const TABS = [
   { to: "/", label: "Settimana", icon: "week" },
@@ -53,6 +54,10 @@ export function App() {
         <button onClick={() => void refresh()}>Riprova</button>
       </div>
     );
+  const inside = state === "ready" && me?.access === "approved" && me.onboarded;
+  if (!inside) rememberInvite();
+  const pendingInvite = inside ? storedInvite() : null;
+
   if (state === "anon" || !me) return <Login onDone={refresh} />;
   if (me.access !== "approved") return <Pending me={me} onRefresh={refresh} />;
   if (!me.onboarded) return <MeContext.Provider value={{ me, refresh, setMe }}><Onboarding /></MeContext.Provider>;
@@ -62,7 +67,7 @@ export function App() {
       <main className="app">
         <header className="app-brand"><NavLink to="/" aria-label="A Tavola, vai alla settimana"><Brand /></NavLink><NavLink className="household-link" to="/famiglia"><Icon name="user" /><span>{me.household.name}</span></NavLink></header>
         <Routes>
-          <Route path="/" element={<Week />} />
+          <Route path="/" element={pendingInvite ? <Navigate to={`/invito/${pendingInvite}`} replace /> : <Week />} />
           <Route path="/ricetta/:id" element={<RecipePage />} />
           <Route path="/ricette" element={<Recipes />} />
           <Route path="/spesa" element={<Shopping />} />
@@ -73,7 +78,7 @@ export function App() {
           <Route path="/famiglia" element={<Family />} />
           <Route path="/profilo" element={<Profile />} />
           <Route path="/invito/:token" element={<Invite />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<Navigate to={pendingInvite ? `/invito/${pendingInvite}` : "/"} replace />} />
         </Routes>
       </main>
       <footer className="tabbar">

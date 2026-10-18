@@ -33,7 +33,7 @@ export async function ensureMembership(db: D1Database, user: { id: string; name:
   }
 }
 
-function householdName(user: { name: string; email: string }): string {
+export function householdName(user: { name: string; email: string }): string {
   const who = user.name?.trim() || user.email.split("@")[0];
   return `Casa di ${who}`;
 }
@@ -114,6 +114,22 @@ async function detach(db: D1Database, userId: string, householdId: string, moveR
     );
   }
   return false;
+}
+
+/** Se il nucleo ha ancora il nome automatico, lo allinea al nuovo nome dell'utente. */
+export async function renameDefaultHousehold(
+  db: D1Database,
+  householdId: string,
+  user: { email: string; oldName: string; newName: string },
+) {
+  const defaults = [householdName({ name: user.oldName, email: user.email }), householdName({ name: "", email: user.email })];
+  await run(
+    db,
+    "UPDATE households SET name = ? WHERE id = ? AND name IN (?, ?)",
+    householdName({ name: user.newName, email: user.email }),
+    householdId,
+    ...defaults,
+  );
 }
 
 export async function acceptInvite(db: D1Database, token: string, userId: string, now = new Date()) {

@@ -24,6 +24,15 @@ describe("auth e nucleo", () => {
     expect(data.onboarded).toBe(true);
   });
 
+  it("il nome scelto all'onboarding sostituisce quello automatico del nucleo, non uno scelto a mano", async () => {
+    const a = await login("mario.rossi.99@example.com");
+    expect((await a.req("GET", "/api/me")).data.household.name).toBe("Casa di mario.rossi.99");
+    expect((await a.req("PATCH", "/api/me", { name: "Mario" })).data.household.name).toBe("Casa di Mario");
+    expect((await a.req("PATCH", "/api/me", { name: "Marione" })).data.household.name).toBe("Casa di Marione");
+    await a.req("PATCH", "/api/household", { name: "I Rossi" });
+    expect((await a.req("PATCH", "/api/me", { name: "Mario" })).data.household.name).toBe("I Rossi");
+  });
+
   it("invito monouso: chi accetta lascia il suo nucleo (eliminato se vuoto) e porta le ricette", async () => {
     const owner = await login("owner1@example.com", "Olga");
     const guest = await login("guest1@example.com", "Gino");

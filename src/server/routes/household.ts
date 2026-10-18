@@ -11,6 +11,7 @@ import {
   HouseholdError,
   leaveHousehold,
   listMembers,
+  renameDefaultHousehold,
 } from "../db/household";
 import { all, first, run, stmt } from "../db/sql";
 
@@ -48,6 +49,10 @@ householdRoutes.patch("/me", async (c) => {
   );
   const user = c.get("user");
   const updates: D1PreparedStatement[] = [];
+  if (data.name !== undefined && c.get("role") === "owner") {
+    const old = await first<{ name: string }>(c.env.DB, `SELECT name FROM "user" WHERE id = ?`, user.id);
+    await renameDefaultHousehold(c.env.DB, c.get("householdId"), { email: user.email, oldName: old?.name ?? "", newName: data.name });
+  }
   if (data.name !== undefined) updates.push(stmt(c.env.DB, `UPDATE "user" SET name = ?, "updatedAt" = ? WHERE id = ?`, data.name, new Date().toISOString(), user.id));
   if (data.breakfast !== undefined) updates.push(stmt(c.env.DB, `UPDATE "user" SET breakfast = ? WHERE id = ?`, data.breakfast, user.id));
   if (data.taste_dishes !== undefined) {
