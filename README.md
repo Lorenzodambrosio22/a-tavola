@@ -2,7 +2,7 @@
 
 **An AI meal planner for a person or a family.** It builds the week's menu around everyone's allergies and tastes, turns it into one shopping list and keeps track of what's left in the pantry.
 
-Mobile-first PWA, in Italian. Live at [atavola.lorenzodambrosio.com](https://atavola.lorenzodambrosio.com) (sign-up is invite-only while in testing).
+Mobile-first PWA, in Italian. Live at [atavola.lorenzodambrosio.com](https://atavola.lorenzodambrosio.com) (access on request, with daily AI limits).
 
 | Sign in | The week | Shopping list | Your recipes |
 |---|---|---|---|
@@ -27,7 +27,7 @@ Mobile-first PWA, in Italian. Live at [atavola.lorenzodambrosio.com](https://ata
 | Data | Cloudflare D1 (SQLite) with versioned SQL migrations |
 | Auth | Better Auth: Google sign-in or a passwordless email code (Resend) |
 | AI | Claude API (`@anthropic-ai/sdk`) and Workers AI behind one interface |
-| Tests | Vitest on the real Worker runtime with local D1: 95 tests, no real AI calls |
+| Tests | Vitest on the real Worker runtime with local D1: 107 tests, no real AI calls |
 
 ```
 src/domain/   pure logic: constraints, portions, nutrition, shopping, learning, pantry

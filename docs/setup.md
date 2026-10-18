@@ -67,7 +67,7 @@ npm run build
    npx wrangler secret put BETTER_AUTH_SECRET    # stringa casuale lunga (es. openssl rand -base64 32)
    npx wrangler secret put ANTHROPIC_API_KEY
    npx wrangler secret put RESEND_API_KEY
-   npx wrangler secret put ADMIN_EMAIL           # email che può aprire /admin/confronto
+   npx wrangler secret put ADMIN_EMAIL           # admin: approva gli accessi (/admin/accessi), riceve gli avvisi, nessun limite AI
    # opzionali
    npx wrangler secret put BRAVE_SEARCH_API_KEY  # ricerca link ricetta per il provider Workers AI
    npx wrangler secret put BETTER_AUTH_URL       # es. https://app-cibo.<tuo-sottodominio>.workers.dev (default: origin della richiesta)
@@ -91,7 +91,15 @@ npm run build
 | `CLAUDE_MODEL_FAST` | `claude-haiku-5-5` | `replaceMeal`, `mapIngredient` |
 | `WORKERS_AI_MODEL` | `@cf/meta/llama-4-scout-17b-16e-instruct` | modello Workers AI |
 | `EMAIL_FROM` | `A Tavola <onboarding@resend.dev>` | mittente email |
+| `AI_LIMIT_USER_DAY` | `20` | operazioni AI al giorno per utente (l'admin non ha limiti); oltre: 429 |
+| `AI_LIMIT_GLOBAL_DAY` | `200` | operazioni AI al giorno per tutta l'app; oltre: AI in pausa per tutti tranne l'admin, email all'admin |
 | `APP_ENV` | `production` | `development` in `.dev.vars` abilita il recapito OTP nel terminale |
+
+## Accessi e limiti AI
+
+- Chi si registra (Google o codice email) resta **in attesa**: vede solo la pagina "Richiesta inviata" e tutte le API, AI comprese, rispondono 403.
+- All'iscrizione parte un'email a `ADMIN_EMAIL` con il link a `/admin/accessi`; approvando, l'utente riceve "Il tuo accesso è attivo".
+- Ogni richiesta che chiama davvero l'AI (Claude o Workers AI) conta **una operazione**, anche se dentro fa più chiamate (menù + nomi ingredienti + ricette preparate in background). Conteggio in D1 (`ai_usage`, giorno italiano), visibile in `/admin/accessi`.
 
 ## Funzioni implementate
 
