@@ -66,19 +66,22 @@ export async function listMembers(db: D1Database, householdId: string): Promise<
   return rows.map((r) => ({ ...r, breakfast: !!r.breakfast }));
 }
 
-export async function createInvite(db: D1Database, householdId: string, userId: string, now = new Date()) {
+export const MAX_INVITE_USES = 10;
+
+export async function createInvite(db: D1Database, householdId: string, userId: string, maxUses = 1, now = new Date()) {
   const bytes = crypto.getRandomValues(new Uint8Array(18));
   const token = btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   const expires = new Date(now.getTime() + 7 * 24 * 3600 * 1000).toISOString();
   await run(
     db,
-    "INSERT INTO household_invites (token, household_id, created_by, expires_at) VALUES (?, ?, ?, ?)",
+    "INSERT INTO household_invites (token, household_id, created_by, expires_at, max_uses) VALUES (?, ?, ?, ?, ?)",
     token,
     householdId,
     userId,
     expires,
+    maxUses,
   );
-  return { token, expires_at: expires };
+  return { token, expires_at: expires, max_uses: maxUses };
 }
 
 export class HouseholdError extends Error {
@@ -133,13 +136,13 @@ export async function renameDefaultHousehold(
 }
 
 export async function acceptInvite(db: D1Database, token: string, userId: string, now = new Date()) {
-  const inv = await first<{ token: string; household_id: string; expires_at: string; used_at: string | null }>(
+  const inv = await first<{ token: string; household_id: string; expires_at: string; uses: number; max_uses: number }>(
     db,
-    "SELECT token, household_id, expires_at, used_at FROM household_invites WHERE token = ?",
+    "SELECT token, household_id, expires_at, uses, max_uses FROM household_invites WHERE token = ?",
     token,
   );
   if (!inv) throw new HouseholdError("Invito non trovato", 404);
-  if (inv.used_at) throw new HouseholdError("Invito già usato", 410);
+  if (inv.uses >= inv.max_uses) throw new HouseholdError("Invito già usato", 410);
   if (inv.expires_at < now.toISOString()) throw new HouseholdError("Invito scaduto", 410);
   const target = await getHousehold(db, inv.household_id);
   if (!target) throw new HouseholdError("Il nucleo non esiste più", 404);
@@ -147,10 +150,10 @@ export async function acceptInvite(db: D1Database, token: string, userId: string
   const current = await getMembership(db, userId);
   if (current?.household_id === inv.household_id) throw new HouseholdError("Fai già parte di questo nucleo", 409);
 
-  // Segna subito l'invito come usato (monouso, protetto da condizione)
+  // Conta subito l'utilizzo; la condizione impedisce di superare il massimo con richieste concorrenti
   const upd = await run(
     db,
-    "UPDATE household_invites SET used_at = ? WHERE token = ? AND used_at IS NULL",
+    "UPDATE household_invites SET uses = uses + 1, used_at = ? WHERE token = ? AND uses < max_uses",
     now.toISOString(),
     token,
   );

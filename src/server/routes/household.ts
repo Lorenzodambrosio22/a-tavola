@@ -11,6 +11,7 @@ import {
   HouseholdError,
   leaveHousehold,
   listMembers,
+  MAX_INVITE_USES,
   renameDefaultHousehold,
 } from "../db/household";
 import { all, first, run, stmt } from "../db/sql";
@@ -82,19 +83,23 @@ householdRoutes.patch("/household", async (c) => {
 
 householdRoutes.post("/household/invites", async (c) => {
   if (c.get("role") !== "owner") fail(403, "Solo il proprietario può invitare");
-  const inv = await createInvite(c.env.DB, c.get("householdId"), c.get("user").id);
+  // Il corpo è facoltativo: senza indicazioni il link vale per una persona
+  const raw = await c.req.json().catch(() => ({}));
+  const parsed = z.object({ max_uses: z.number().int().min(1).max(MAX_INVITE_USES).default(1) }).safeParse(raw ?? {});
+  if (!parsed.success) fail(400, `Il link può valere da 1 a ${MAX_INVITE_USES} persone`);
+  const inv = await createInvite(c.env.DB, c.get("householdId"), c.get("user").id, parsed.data.max_uses);
   const origin = new URL(c.req.url).origin;
   return c.json({ ...inv, url: `${origin}/invito/${inv.token}` });
 });
 
 householdRoutes.get("/household/invites/:token", async (c) => {
-  const row = await first<{ name: string; expires_at: string; used_at: string | null }>(
+  const row = await first<{ name: string; expires_at: string; uses: number; max_uses: number }>(
     c.env.DB,
-    `SELECT h.name, i.expires_at, i.used_at FROM household_invites i JOIN households h ON h.id = i.household_id WHERE i.token = ?`,
+    `SELECT h.name, i.expires_at, i.uses, i.max_uses FROM household_invites i JOIN households h ON h.id = i.household_id WHERE i.token = ?`,
     c.req.param("token"),
   );
   if (!row) fail(404, "Invito non trovato");
-  const valid = !row.used_at && row.expires_at > new Date().toISOString();
+  const valid = row.uses < row.max_uses && row.expires_at > new Date().toISOString();
   return c.json({ household_name: row.name, valid });
 });
 

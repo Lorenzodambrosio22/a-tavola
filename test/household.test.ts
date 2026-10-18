@@ -62,6 +62,31 @@ describe("auth e nucleo", () => {
     expect(again.status).toBe(410);
   });
 
+  it("invito per più persone: vale fino al numero scelto", async () => {
+    const owner = await login("owner4@example.com", "Rita");
+    const inv = await owner.req("POST", "/api/household/invites", { max_uses: 2 });
+    expect(inv.data.max_uses).toBe(2);
+
+    const papa = await login("papa4@example.com", "Piero");
+    const mamma = await login("mamma4@example.com", "Marta");
+    expect((await papa.req("POST", "/api/household/join", { token: inv.data.token })).status).toBe(200);
+    expect((await papa.req("GET", `/api/household/invites/${inv.data.token}`)).data.valid).toBe(true);
+    const join = await mamma.req("POST", "/api/household/join", { token: inv.data.token });
+    expect(join.status).toBe(200);
+    expect(join.data.members.map((m: any) => m.name).sort()).toEqual(["Marta", "Piero", "Rita"]);
+
+    const terzo = await login("terzo4@example.com");
+    expect((await terzo.req("GET", `/api/household/invites/${inv.data.token}`)).data.valid).toBe(false);
+    expect((await terzo.req("POST", "/api/household/join", { token: inv.data.token })).status).toBe(410);
+  });
+
+  it("rifiuta un numero di persone fuori dai limiti", async () => {
+    const owner = await login("owner5@example.com");
+    expect((await owner.req("POST", "/api/household/invites", { max_uses: 0 })).status).toBe(400);
+    expect((await owner.req("POST", "/api/household/invites", { max_uses: 11 })).status).toBe(400);
+    expect((await owner.req("POST", "/api/household/invites", { max_uses: 1.5 })).status).toBe(400);
+  });
+
   it("solo l'owner invita; un membro può uscire e torna in un nucleo personale", async () => {
     const owner = await login("owner2@example.com", "Ada");
     const m = await login("member2@example.com", "Max");

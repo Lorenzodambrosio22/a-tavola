@@ -5,7 +5,8 @@ import { ErrorBox, useMe } from "../ui";
 
 export function Family() {
   const { me, setMe, refresh } = useMe();
-  const [invite, setInvite] = useState<{ url: string; expires_at: string } | null>(null);
+  const [invite, setInvite] = useState<{ url: string; expires_at: string; max_uses: number } | null>(null);
+  const [people, setPeople] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const owner = me.household.role === "owner";
@@ -19,7 +20,7 @@ export function Family() {
     setError(null);
     setCopied(false);
     try {
-      setInvite(await api("POST", "/api/household/invites"));
+      setInvite(await api("POST", "/api/household/invites", { max_uses: people }));
     } catch (e) {
       setError((e as Error).message);
     }
@@ -73,9 +74,25 @@ export function Family() {
       {owner && (
         <div className="card stack">
           <h2>Invita qualcuno</h2>
-          <p className="muted">Ogni link vale 7 giorni e serve a una sola persona: per invitarne due, creane due. Chi accetta lascia il proprio nucleo e porta con sé le sue ricette.</p>
+          <p className="muted">Il link vale 7 giorni per il numero di persone che scegli. Chi accetta lascia il proprio nucleo e porta con sé le sue ricette.</p>
+          <div className="field">
+            <label htmlFor="invite-people">Quante persone vuoi invitare?</label>
+            <select id="invite-people" value={people} onChange={(e) => {
+              setPeople(Number(e.target.value));
+              setInvite(null);
+            }}>
+              {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+                <option key={n} value={n}>
+                  {n === 1 ? "1 persona" : `${n} persone`}
+                </option>
+              ))}
+            </select>
+          </div>
           {invite ? (
             <>
+              <p className="muted">
+                Questo link vale per {invite.max_uses === 1 ? "1 persona" : `${invite.max_uses} persone`}.
+              </p>
               <input readOnly value={invite.url} onFocus={(e) => e.target.select()} aria-label="Link di invito" />
               <button className="btn-primary btn-block" onClick={() => void share()}>
                 {copied ? "Copiato!" : "Condividi il link"}
